@@ -1,42 +1,385 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Deep Space + Neon Noir Color Palette */
+  --bg-void: #000000;
+  --bg-deep: #0a0a0f;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+  /* Neon Colors */
+  --neon-pink: #ff0099;
+  --neon-pink-glow: rgba(255, 0, 153, 0.6);
+  --hot-lime: #39ff14;
+  --hot-lime-glow: rgba(57, 255, 20, 0.6);
+  --blood-red: #8b0000;
+  --dark-grey: #555555;
+  --secret-gold: #ffd700;
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
 }
 
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  min-height: 100%;
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+/* Neon Text Glow Animation */
+@keyframes neonPulse {
+
+  0%,
+  100% {
+    text-shadow:
+      0 0 5px var(--neon-pink),
+      0 0 10px var(--neon-pink),
+      0 0 20px var(--neon-pink),
+      0 0 40px var(--neon-pink);
+  }
+
+  50% {
+    text-shadow:
+      0 0 10px var(--neon-pink),
+      0 0 20px var(--neon-pink),
+      0 0 40px var(--neon-pink),
+      0 0 80px var(--neon-pink);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-20px) rotate(2deg);
+  }
+}
+
+@keyframes blackHoleSpiral {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(3) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes suckIn {
+  0% {
+    transform: scale(1) translate(0, 0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0) translate(var(--hole-x), var(--hole-y));
+    opacity: 0;
+  }
+}
+
+/* Main Container */
+.main-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #0a0a1a 0%, #000000 70%);
+}
+
+/* Floating Neon Title */
+.neon-title {
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 900;
+  color: var(--neon-pink);
+  animation: neonPulse 2s ease-in-out infinite, float 4s ease-in-out infinite;
+  text-align: center;
+  letter-spacing: 0.1em;
+  position: absolute;
+  cursor: grab;
+  z-index: 10;
+}
+
+.neon-title:active {
+  cursor: grabbing;
+}
+
+/* Upload Zone */
+.upload-zone {
+  width: 80%;
+  max-width: 400px;
+  height: 200px;
+  border: 3px dashed var(--neon-pink);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+  background: rgba(255, 0, 153, 0.05);
+  margin-top: 120px;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--hot-lime);
+  background: rgba(57, 255, 20, 0.1);
+  box-shadow: 0 0 30px var(--hot-lime-glow);
+  transform: scale(1.02);
+}
+
+.upload-zone input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-icon {
+  font-size: 3rem;
+}
+
+.upload-text {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+/* Black Hole */
+.black-hole {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1a0a20 0%, #000000 50%, transparent 70%);
+  box-shadow:
+    0 0 60px 30px rgba(100, 0, 150, 0.3),
+    0 0 100px 60px rgba(50, 0, 100, 0.2),
+    inset 0 0 50px rgba(0, 0, 0, 1);
+  transform: translate(-50%, -50%) scale(0);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.black-hole.active {
+  animation: blackHoleSpiral 1.5s ease-in forwards;
+}
+
+/* Physics Canvas Container */
+.physics-container {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.physics-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Result Header */
+.result-header {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  text-align: center;
+}
+
+.score-display {
+  font-size: clamp(3rem, 15vw, 6rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--neon-pink), var(--hot-lime));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.score-label {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* Floating Keyword Labels */
+.keyword-label {
+  position: absolute;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 20;
+  white-space: nowrap;
+}
+
+.keyword-label.positive {
+  background: var(--neon-pink);
+  color: white;
+  box-shadow: 0 0 20px var(--neon-pink-glow);
+}
+
+.keyword-label.negative {
+  background: var(--dark-grey);
+  color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Action Buttons */
+.action-buttons {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 50;
+}
+
+.action-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, var(--neon-pink), #ff6b9d);
+  color: white;
+  box-shadow: 0 0 20px var(--neon-pink-glow);
+}
+
+.action-btn.primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px var(--neon-pink-glow);
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 0, 153, 0.3);
+  border-top-color: var(--neon-pink);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .upload-zone {
+    width: 90%;
+    height: 180px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    width: 90%;
+    gap: 10px;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+}
+
+/* Demo Button */
+.demo-btn {
+  margin-top: 2rem;
+  padding: 15px 40px;
+  background: linear-gradient(135deg, #ff0099, #39ff14);
+  border: none;
+  border-radius: 30px;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 0 30px rgba(255, 0, 153, 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.demo-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 50px rgba(255, 0, 153, 0.7);
+}
+
+/* Stars background container */
+.stars-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, #0a0a1a 0%, #000000 70%);
+  z-index: 0;
+}
+
+/* Twinkle animation for stars */
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
   }
 }
