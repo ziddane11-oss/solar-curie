@@ -67,7 +67,7 @@ export function getShareOverlayText(score, verdict) {
     };
 }
 
-// 인스타 스토리용 캡처 저장
+// 인스타 스토리용 캡처 저장 (최적화)
 export async function saveShareCardPng() {
     if (typeof window === 'undefined') return { ok: false, reason: 'ssr' };
 
@@ -75,22 +75,25 @@ export async function saveShareCardPng() {
     if (!node) return { ok: false, reason: 'no_node' };
 
     try {
-        // Dynamic import to avoid SSR issues
         const { toPng } = await import('html-to-image');
 
-        // 폰트 로딩 대기
-        await new Promise(r => setTimeout(r, 300));
+        // 폰트 로딩 안정화
+        if (document.fonts?.ready) await document.fonts.ready;
 
         const dataUrl = await toPng(node, {
             cacheBust: true,
-            pixelRatio: 2, // 선명도 업
-            backgroundColor: '#000'
+            pixelRatio: 2,
+            backgroundColor: '#000000',
+            style: {
+                transform: 'scale(1)',
+                transformOrigin: 'top left',
+            },
         });
 
         // 다운로드 링크 생성
         const a = document.createElement('a');
         a.href = dataUrl;
-        a.download = 'talkcaddy-result.png';
+        a.download = 'talkcaddy-story.png';
         a.click();
 
         return { ok: true };
@@ -100,7 +103,7 @@ export async function saveShareCardPng() {
         // iOS fallback: 이미지 새 탭 열기
         try {
             const { toPng } = await import('html-to-image');
-            const dataUrl = await toPng(node, { pixelRatio: 2 });
+            const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: '#000000' });
             window.open(dataUrl, '_blank');
             return { ok: true, method: 'new_tab' };
         } catch {

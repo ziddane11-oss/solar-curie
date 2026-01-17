@@ -229,14 +229,16 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
 
         // 저장도 공유 보상 지급
         const rewarded = grantShareBonus();
+        const left = getFreeLeft();
+
         if (rewarded) {
-            trackShareRewardGranted(getFreeLeft());
-            setToastMessage(`🎁 저장 보상 +1회 지급됨! (남은 ${getFreeLeft()}회)`);
+            trackShareRewardGranted(left);
+            setToastMessage(`🎁 저장 완료! +1회 (남은 ${left}회) 📸 스토리에 올려봐!`);
         } else {
-            setToastMessage('📸 저장 완료! 인스타 스토리에 올려봐!');
+            setToastMessage('📸 저장 완료! 인스타 → 스토리 → 갤러리에서 선택 ㄱ');
         }
         setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
+        setTimeout(() => setShowToast(false), 4000);
     }, []);
 
     if (!result) {
@@ -273,34 +275,36 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
 
             {/* Content overlay */}
             <div className="result-content">
-                {/* 인스타/공유용 캡처 카드 */}
-                <div id="share-card" className="share-card">
-                    <div className="share-card-header">
-                        <span>톡캐디 판정서</span>
-                        <span>{new Date().toLocaleDateString('ko-KR')}</span>
-                    </div>
-
-                    <div className="share-card-main">
-                        <div className="share-score">
-                            <span className="score-number">{result.score}%</span>
-                            <span className="score-label">유사 대화 기준</span>
+                {/* 인스타/공유용 캡처 카드 - 9:16 스토리 캔버스 */}
+                <div id="share-card" className="story-canvas">
+                    <div className="share-card-inner">
+                        <div className="share-card-header">
+                            <span>톡캐디 판정서</span>
+                            <span>{new Date().toLocaleDateString('ko-KR')}</span>
                         </div>
-                        <div className="share-verdict">
-                            <span className={`verdict-badge ${result.verdict === 'GO' ? 'go' : 'stop'}`}>
-                                {result.verdict}
-                            </span>
-                            <span className="verdict-sub">{result.verdict === 'GO' ? '밀어붙여' : '그만해'}</span>
+
+                        <div className="share-card-main">
+                            <div className="share-score">
+                                <span className="score-number">{result.score}%</span>
+                                <span className="score-label">유사 대화 기준</span>
+                            </div>
+                            <div className="share-verdict">
+                                <span className={`verdict-badge ${result.verdict === 'GO' ? 'go' : 'stop'}`}>
+                                    {result.verdict}
+                                </span>
+                                <span className="verdict-sub">{result.verdict === 'GO' ? '밀어붙여' : '그만해'}</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="share-card-roast">
-                        <span className="roast-label">독설</span>
-                        <p>{result.insight?.text || result.verdictMessage}</p>
-                    </div>
+                        <div className="share-card-roast">
+                            <span className="roast-label">독설</span>
+                            <p>{result.insight?.text || result.verdictMessage}</p>
+                        </div>
 
-                    <div className="share-card-footer">
-                        <span>talkcaddy</span>
-                        <span>solar-curie.vercel.app</span>
+                        <div className="share-card-footer">
+                            <span>talkcaddy</span>
+                            <span>solar-curie.vercel.app</span>
+                        </div>
                     </div>
                 </div>
 
@@ -395,10 +399,10 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
             {/* Sticky CTA bar (bottom fixed) - 3 buttons */}
             <div className="sticky-cta-bar">
                 <button className="cta-share-btn" onClick={() => handleShare('sticky_bar')}>
-                    📤 공유
+                    📤 공유 +1
                 </button>
                 <button className="cta-insta-btn" onClick={handleInstaSave}>
-                    📸 인스타 저장
+                    📸 스토리 저장
                 </button>
                 <button className="cta-retry-btn" onClick={handleReset}>
                     🔄
@@ -580,14 +584,26 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
           padding: 16px;
           font-size: 1.2rem;
         }
-        /* Share Card Styles */
-        .share-card {
+        /* Story Canvas - 9:16 ratio for Instagram Story */
+        .story-canvas {
           width: 100%;
           max-width: 360px;
+          aspect-ratio: 9 / 16;
           margin: 0 auto 20px;
-          padding: 20px;
+          padding: 40px 20px;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: radial-gradient(circle at 30% 20%, rgba(255,0,150,0.35), rgba(0,0,0,0.95) 55%);
           border-radius: 24px;
-          background: linear-gradient(180deg, rgba(255,0,150,0.2), rgba(0,0,0,0.7));
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .share-card-inner {
+          width: 100%;
+          padding: 20px;
+          background: rgba(0,0,0,0.4);
+          border-radius: 20px;
           border: 1px solid rgba(255,255,255,0.1);
           backdrop-filter: blur(10px);
         }
