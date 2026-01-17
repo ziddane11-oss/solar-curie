@@ -7,6 +7,8 @@ import SpeedGauge from '@/components/SpeedGauge';
 import ActionCard from '@/components/ActionCard';
 import InsightBox from '@/components/InsightBox';
 import Confetti from '@/components/Confetti';
+import { grantShareBonus, saveToHistory, hasSharedToday } from '@/lib/usageTracker';
+import NightModeBanner from '@/components/NightMode';
 
 // Dynamic import to avoid SSR issues with Matter.js
 const PhysicsWorld = dynamic(() => import('@/components/PhysicsWorld'), {
@@ -45,9 +47,9 @@ const mockResults = {
             after: '너랑 더 시간 보내고 싶어'
         },
         actionCards: [
-            { type: 'flirt', message: '혼자 먹으면 맛없는데... 우리 집으로 시킬까?' },
-            { type: 'tease', message: '사주는 건 쉬운데 넌 뭐 해줄 건데?😏' },
-            { type: 'sweet', message: '마침 나도 단 거 땡겼어! 어디서 볼까?' }
+            { type: 'flirt', message: '혼자 먹으면 맛없는데... 우리 집으로 시킬까?', risk: 'high' },
+            { type: 'tease', message: '사주는 건 쉬운데 넌 뭐 해줄 건데?😏', risk: 'medium' },
+            { type: 'sweet', message: '마침 나도 단 거 땡겼어! 어디서 볼까?', risk: 'safe' }
         ]
     },
     cold: {
@@ -69,9 +71,9 @@ const mockResults = {
             after: '관심없어 그만해'
         },
         actionCards: [
-            { type: 'cold', message: '바쁜가보네~ 나중에 연락해!' },
-            { type: 'tease', message: '답장 그렇게 하면 재미없는 사람 돼요~' },
-            { type: 'cold', message: '(읽고 씹기)' }
+            { type: 'cold', message: '바쁜가보네~ 나중에 연락해!', risk: 'safe' },
+            { type: 'tease', message: '답장 그렇게 하면 재미없는 사람 돼요~', risk: 'medium' },
+            { type: 'cold', message: '(읽고 씹기)', risk: 'high', locked: true }
         ]
     }
 };
@@ -102,6 +104,9 @@ export default function ResultPage() {
         }));
 
         setResult(selectedResult);
+
+        // Save to history
+        saveToHistory(selectedResult);
 
         // Trigger confetti for hot results
         if (isHot) {
@@ -135,14 +140,22 @@ export default function ResultPage() {
     const handleShare = useCallback(async () => {
         if (!result) return;
 
-        const shareText = `🔥 톡캐디 GRAVITY 분석 결과 🔥
+        // Random viral share prompts
+        const viralPrompts = [
+            "이 판정... 친구한테 보여주면 100% 웃김 ㅋㅋㅋ",
+            "너라면 이 상황에 뭐 보냄? 🤔",
+            result.verdict === 'GO' ? "톡캐디가 나 살렸다 ㅠㅠ" : "톡캐디가 나 죽였다..."
+        ];
+        const randomPrompt = viralPrompts[Math.floor(Math.random() * viralPrompts.length)];
 
-내 썸 온도: ${result.score}%
-판정: ${result.verdict === 'GO' ? '🟢 GO - 게임 끝!' : '🔴 STOP - 그만해...'}
+        const shareText = `🔥 톡캐디 GRAVITY 판정 🔥
 
-${result.verdictMessage}
+${result.verdict === 'GO' ? '🟢' : '🔴'} ${result.score}% - ${result.verdictMessage}
 
-👉 너도 해봐: ${window.location.origin}`;
+${randomPrompt}
+
+👉 너도 해봐: https://solar-curie.vercel.app
+#톡캐디 #딸깍연애단 #답장러`;
 
         // Try Web Share API first (works on mobile)
         if (navigator.share) {
@@ -160,7 +173,13 @@ ${result.verdictMessage}
         // Fallback: Copy to clipboard
         try {
             await navigator.clipboard.writeText(shareText);
-            setToastMessage('📋 클립보드에 복사됨! 카톡에 붙여넣기 해봐!');
+            // Grant share bonus
+            const bonusGranted = grantShareBonus();
+            if (bonusGranted) {
+                setToastMessage('📋 복사됨! 🎁 공유 보너스 +1회 획득!');
+            } else {
+                setToastMessage('📋 클립보드에 복사됨! 카톡에 붙여넣기 해봐!');
+            }
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
         } catch (err) {
@@ -171,7 +190,8 @@ ${result.verdictMessage}
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            setToastMessage('📋 복사 완료!');
+            grantShareBonus();
+            setToastMessage('📋 복사 완료! 🎁 +1회!');
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
         }
@@ -202,6 +222,9 @@ ${result.verdictMessage}
 
             {/* Confetti celebration for hot results */}
             <Confetti isActive={showConfetti} type={result.type === 'hot' ? 'success' : 'fail'} />
+
+            {/* Night mode warning banner */}
+            <NightModeBanner />
 
             {/* Content overlay */}
             <div className="result-content">
@@ -264,6 +287,8 @@ ${result.verdictMessage}
                                     key={i}
                                     type={card.type}
                                     message={card.message}
+                                    risk={card.risk}
+                                    locked={card.locked}
                                     onCopy={handleCopy}
                                 />
                             ))}
