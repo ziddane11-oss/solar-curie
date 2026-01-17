@@ -3,53 +3,60 @@
 import Link from "next/link";
 
 export default function ResultPreviewPage({ searchParams }) {
-    const c = Number(searchParams?.c ?? 0);
-    const v = (searchParams?.v ?? "STOP").toString().toUpperCase();
+  const c = Number(searchParams?.c ?? 0);
+  const v = (searchParams?.v ?? "STOP").toString().toUpperCase();
 
-    const verdictText =
-        v === "GO" ? "밀어붙여" : v === "CAUTION" ? "조심" : "그만해";
+  const verdictText =
+    v === "GO" ? "밀어붙여" : v === "CAUTION" ? "조심" : "그만해";
 
-    const verdictColor = v === "GO" ? "#39ff14" : "#ff4444";
+  const verdictColor = v === "GO" ? "#39ff14" : "#ff4444";
 
-    return (
-        <div className="preview-container">
-            <div className="preview-content">
-                <div className="preview-label">톡캐디 프리뷰</div>
+  // STOP일 때 서브 텍스트 (위기감)
+  const verdictWarn = v === "GO"
+    ? "지금이 밀어붙일 타이밍임"
+    : "지금 보내면 마이너스 시작";
 
-                <div className="preview-card">
-                    <div className="preview-card-header">
-                        <span>오늘 밤 성공확률</span>
-                        <span>{new Date().toLocaleDateString("ko-KR")}</span>
-                    </div>
+  return (
+    <div className="preview-container">
+      <div className="preview-content">
+        <div className="preview-label">AI 연애 판정서</div>
 
-                    <div className="preview-card-main">
-                        <div className="preview-score">{c}%</div>
-                        <div className="preview-verdict">
-                            <div className="verdict-text" style={{ color: verdictColor }}>{v}</div>
-                            <div className="verdict-sub">{verdictText}</div>
-                        </div>
-                    </div>
+        <div className="preview-card">
+          <div className="preview-card-header">
+            <span>오늘 밤 성공확률</span>
+            <span>{new Date().toLocaleDateString("ko-KR")}</span>
+          </div>
 
-                    <div className="preview-question">
-                        이 결과 보고 <b>너라면 뭐 보냄?</b>
-                    </div>
-                </div>
-
-                <div className="preview-buttons">
-                    <Link href="/" className="btn-primary">
-                        나도 분석해보기
-                    </Link>
-                    <Link href="/" className="btn-secondary">
-                        시작
-                    </Link>
-                </div>
-
-                <div className="preview-note">
-                    * 로그인 없이 바로 가능
-                </div>
+          <div className="preview-card-main">
+            <div className="preview-score">{c}%</div>
+            <div className="preview-verdict">
+              <div className="verdict-text" style={{ color: verdictColor }}>{v}</div>
+              <div className="verdict-sub">{verdictText}</div>
             </div>
+          </div>
 
-            <style jsx>{`
+          <div className="verdict-warn">{verdictWarn}</div>
+
+          <div className="preview-question">
+            지금 답장 하나로 결과 바뀜. <b>너라면?</b>
+          </div>
+        </div>
+
+        <div className="preview-buttons">
+          <Link href="/" className="btn-primary">
+            지금 답장 분석하기
+          </Link>
+          <Link href="/" className="btn-secondary">
+            무료
+          </Link>
+        </div>
+
+        <div className="preview-note">
+          * 로그인 없이 3초만에 판정
+        </div>
+      </div>
+
+      <style jsx>{`
         .preview-container {
           min-height: 100vh;
           display: flex;
@@ -107,8 +114,14 @@ export default function ResultPreviewPage({ searchParams }) {
           opacity: 0.8;
           margin-top: 4px;
         }
+        .verdict-warn {
+          margin-top: 15px;
+          font-size: 0.85rem;
+          color: #ff6b9d;
+          font-weight: 500;
+        }
         .preview-question {
-          margin-top: 20px;
+          margin-top: 15px;
           font-size: 0.95rem;
           opacity: 0.8;
         }
@@ -144,6 +157,6 @@ export default function ResultPreviewPage({ searchParams }) {
           opacity: 0.6;
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }
