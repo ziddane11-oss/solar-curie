@@ -14,6 +14,7 @@ import { addHistory, createHistoryItem } from '@/lib/history';
 import { maybePromptLogin } from '@/lib/useCounter';
 import { isNightKst, shouldLockAction } from '@/lib/nightMode';
 import { trackResultView, trackActionCopy, trackLockedActionClick, trackShareSuccess, trackShareRewardGranted } from '@/lib/analytics';
+import { saveShareCardPng } from '@/lib/share';
 
 // Dynamic import to avoid SSR issues with Matter.js
 const PhysicsWorld = dynamic(() => import('@/components/PhysicsWorld'), {
@@ -216,6 +217,28 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
         }
     }, [result]);
 
+    // 인스타 스토리 저장
+    const handleInstaSave = useCallback(async () => {
+        const r = await saveShareCardPng();
+        if (!r.ok) {
+            setToastMessage('❌ 저장 실패 - 다시 시도해주세요');
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+            return;
+        }
+
+        // 저장도 공유 보상 지급
+        const rewarded = grantShareBonus();
+        if (rewarded) {
+            trackShareRewardGranted(getFreeLeft());
+            setToastMessage(`🎁 저장 보상 +1회 지급됨! (남은 ${getFreeLeft()}회)`);
+        } else {
+            setToastMessage('📸 저장 완료! 인스타 스토리에 올려봐!');
+        }
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+    }, []);
+
     if (!result) {
         return (
             <main className="main-container">
@@ -250,6 +273,37 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
 
             {/* Content overlay */}
             <div className="result-content">
+                {/* 인스타/공유용 캡처 카드 */}
+                <div id="share-card" className="share-card">
+                    <div className="share-card-header">
+                        <span>톡캐디 판정서</span>
+                        <span>{new Date().toLocaleDateString('ko-KR')}</span>
+                    </div>
+
+                    <div className="share-card-main">
+                        <div className="share-score">
+                            <span className="score-number">{result.score}%</span>
+                            <span className="score-label">유사 대화 기준</span>
+                        </div>
+                        <div className="share-verdict">
+                            <span className={`verdict-badge ${result.verdict === 'GO' ? 'go' : 'stop'}`}>
+                                {result.verdict}
+                            </span>
+                            <span className="verdict-sub">{result.verdict === 'GO' ? '밀어붙여' : '그만해'}</span>
+                        </div>
+                    </div>
+
+                    <div className="share-card-roast">
+                        <span className="roast-label">독설</span>
+                        <p>{result.insight?.text || result.verdictMessage}</p>
+                    </div>
+
+                    <div className="share-card-footer">
+                        <span>talkcaddy</span>
+                        <span>solar-curie.vercel.app</span>
+                    </div>
+                </div>
+
                 {/* Speed Gauge */}
                 <SpeedGauge score={result.score} verdict={result.verdict} />
 
@@ -338,13 +392,16 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
                 ✅ 보관함에 저장됨
             </div>
 
-            {/* Sticky CTA bar (bottom fixed) */}
+            {/* Sticky CTA bar (bottom fixed) - 3 buttons */}
             <div className="sticky-cta-bar">
                 <button className="cta-share-btn" onClick={() => handleShare('sticky_bar')}>
-                    공유하고 +1 받기
+                    📤 공유
+                </button>
+                <button className="cta-insta-btn" onClick={handleInstaSave}>
+                    📸 인스타 저장
                 </button>
                 <button className="cta-retry-btn" onClick={handleReset}>
-                    다시하기
+                    🔄
                 </button>
             </div>
 
@@ -502,6 +559,112 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
           font-size: 0.9rem;
           font-weight: 600;
           cursor: pointer;
+        }
+        .cta-insta-btn {
+          flex: 1;
+          padding: 16px;
+          border: none;
+          border-radius: 25px;
+          background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+          color: white;
+          font-size: 0.9rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+        .cta-insta-btn:hover {
+          transform: scale(1.02);
+        }
+        .cta-retry-btn {
+          width: 60px;
+          padding: 16px;
+          font-size: 1.2rem;
+        }
+        /* Share Card Styles */
+        .share-card {
+          width: 100%;
+          max-width: 360px;
+          margin: 0 auto 20px;
+          padding: 20px;
+          border-radius: 24px;
+          background: linear-gradient(180deg, rgba(255,0,150,0.2), rgba(0,0,0,0.7));
+          border: 1px solid rgba(255,255,255,0.1);
+          backdrop-filter: blur(10px);
+        }
+        .share-card-header {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.8rem;
+          color: rgba(255,255,255,0.6);
+          margin-bottom: 15px;
+        }
+        .share-card-main {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 15px;
+        }
+        .share-score .score-number {
+          font-size: 3.5rem;
+          font-weight: 900;
+          background: linear-gradient(135deg, #ff0099, #00d4ff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .share-score .score-label {
+          display: block;
+          font-size: 0.75rem;
+          color: rgba(255,255,255,0.5);
+        }
+        .share-verdict {
+          text-align: right;
+        }
+        .verdict-badge {
+          display: inline-block;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 1.2rem;
+          font-weight: 800;
+        }
+        .verdict-badge.go {
+          background: rgba(57, 255, 20, 0.2);
+          color: #39ff14;
+        }
+        .verdict-badge.stop {
+          background: rgba(255, 0, 0, 0.2);
+          color: #ff4444;
+        }
+        .verdict-sub {
+          display: block;
+          font-size: 0.8rem;
+          color: rgba(255,255,255,0.6);
+          margin-top: 5px;
+        }
+        .share-card-roast {
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 16px;
+          padding: 15px;
+          margin-bottom: 15px;
+        }
+        .roast-label {
+          font-size: 0.7rem;
+          color: rgba(255,255,255,0.5);
+          display: block;
+          margin-bottom: 5px;
+        }
+        .share-card-roast p {
+          margin: 0;
+          font-size: 0.95rem;
+          color: white;
+          line-height: 1.4;
+        }
+        .share-card-footer {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.7rem;
+          color: rgba(255,255,255,0.4);
         }
       `}</style>
         </main>

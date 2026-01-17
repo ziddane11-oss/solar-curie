@@ -66,3 +66,57 @@ export function getShareOverlayText(score, verdict) {
         brand: '톡캐디 GRAVITY'
     };
 }
+
+// 인스타 스토리용 캡처 저장
+export async function saveShareCardPng() {
+    if (typeof window === 'undefined') return { ok: false, reason: 'ssr' };
+
+    const node = document.getElementById('share-card');
+    if (!node) return { ok: false, reason: 'no_node' };
+
+    try {
+        // Dynamic import to avoid SSR issues
+        const { toPng } = await import('html-to-image');
+
+        // 폰트 로딩 대기
+        await new Promise(r => setTimeout(r, 300));
+
+        const dataUrl = await toPng(node, {
+            cacheBust: true,
+            pixelRatio: 2, // 선명도 업
+            backgroundColor: '#000'
+        });
+
+        // 다운로드 링크 생성
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = 'talkcaddy-result.png';
+        a.click();
+
+        return { ok: true };
+    } catch (e) {
+        console.error('Share card capture failed:', e);
+
+        // iOS fallback: 이미지 새 탭 열기
+        try {
+            const { toPng } = await import('html-to-image');
+            const dataUrl = await toPng(node, { pixelRatio: 2 });
+            window.open(dataUrl, '_blank');
+            return { ok: true, method: 'new_tab' };
+        } catch {
+            return { ok: false, reason: 'toPng_fail' };
+        }
+    }
+}
+
+// 링크만 복사
+export async function copyShareLink(score, verdict) {
+    const url = `https://solar-curie.vercel.app?c=${score}&v=${verdict}`;
+    try {
+        await navigator.clipboard.writeText(url);
+        return { ok: true };
+    } catch {
+        return { ok: false };
+    }
+}
+
