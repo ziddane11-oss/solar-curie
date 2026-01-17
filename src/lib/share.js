@@ -19,6 +19,14 @@ https://solar-curie.vercel.app
 #톡캐디 #딸깍연애단`;
 }
 
+// 인스타 스토리용 캡션 (자동 복사용)
+export function buildStoryCaption(result) {
+    if (result.verdict === 'GO') {
+        return `AI가 말하길… 오늘은 밀어붙이라네 🔥 (${result.score}%)\n너라면 뭐 보냄?`;
+    }
+    return `AI 판정: 지금 보내면 망함 ❌ (${result.score}%)\n이 상황 너라면 어케 함?`;
+}
+
 // 공유 실행
 export async function shareResult(payload) {
     try {
