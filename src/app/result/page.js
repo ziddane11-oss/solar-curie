@@ -33,57 +33,104 @@ const PhysicsWorld = dynamic(() => import('@/components/PhysicsWorld'), {
   )
 });
 
-// Mock analysis results for MVP demo
-const mockResults = {
-  hot: {
-    score: 75 + Math.floor(Math.random() * 20), // 75-95%
-    type: 'hot',
-    verdict: 'GO',
-    verdictMessage: '이 흐름이면 자연스럽게 다음 단계 생김',
-    keywords: [
-      { text: '적극적', type: 'bubble', sentiment: 'positive' },
-      { text: '관심폭발', type: 'bubble', sentiment: 'positive' },
-      { text: '오늘각', type: 'bubble', sentiment: 'positive' },
-      { text: '설렘가득', type: 'bubble', sentiment: 'positive' },
-      { text: '유혹중', type: 'bubble', sentiment: 'positive' },
-    ],
-    insight: {
-      persona: '카사노바',
-      text: '상대방은 디저트를 핑계로 너랑 술 마시고 싶은 거임. 눈치 좀 챙겨.',
-      before: '디저트 먹고 싶다~',
-      after: '너랑 더 시간 보내고 싶어'
-    },
-    actionCards: [
-      { type: 'flirt', message: '두쫀쿠는 핑계고 그냥 더 같이 있고 싶음', risk: 'high' },
-      { type: 'tease', message: '이 분위기에서 집 가자는 건 예의 아님', risk: 'medium' },
-      { type: 'sweet', message: '오늘은 집 가면 후회하는 날임', risk: 'safe' }
-    ]
-  },
-  cold: {
-    score: 10 + Math.floor(Math.random() * 25), // 10-35%
-    type: 'cold',
-    verdict: 'STOP',
-    verdictMessage: '지금 보내면 마이너스 시작함',
-    keywords: [
-      { text: '읽씹', type: 'brick', sentiment: 'negative' },
-      { text: '철벽', type: 'brick', sentiment: 'negative' },
-      { text: '어장관리', type: 'brick', sentiment: 'negative' },
-      { text: 'ㅋ', type: 'brick', sentiment: 'negative' },
-      { text: '바쁨', type: 'brick', sentiment: 'negative' },
-    ],
-    insight: {
-      persona: '독설가',
-      text: '이건 관심 없다는 거야. 1글자 답장은 \"꺼져\"의 다른 표현임.',
-      before: 'ㅇㅇ ㅋ',
-      after: '관심없어 그만해'
-    },
-    actionCards: [
-      { type: 'cold', message: '오늘은 여기까지인 듯~ 담에 봐!', risk: 'safe' },
-      { type: 'tease', message: '답장 그렇게 하면 재미없는 사람 돼요~', risk: 'medium' },
-      { type: 'cold', message: '(읽고 조용히 빠지기)', risk: 'high', locked: true }
-    ]
+// 다양한 독설/메시지 풀 (매번 다른 결과 생성)
+const hotRoasts = [
+  { text: '상대방은 디저트를 핑계로 너랑 술 마시고 싶은 거임. 눈치 좀 챙겨.', before: '디저트 먹고 싶다~', after: '너랑 더 시간 보내고 싶어' },
+  { text: '이 정도면 상대방 마음에 불 붙은 거임. 여기서 끝내면 후회함.', before: '오늘 재밌었다', after: '더 같이 있고 싶어' },
+  { text: '상대가 굳이 안 해도 되는 연락을 하고 있음. 확실한 신호임.', before: '뭐해~?', after: '너 생각나서 연락함' },
+  { text: '"ㅋㅋ"가 3개 이상이면 좋은 거임. 지금 웃기지도 않은데 웃어주고 있는 거거든.', before: 'ㅋㅋㅋㅋ', after: '호감 있어서 다 웃겨' },
+  { text: '상대방이 이모지 쓰면서 대화하고 있음. 감정 투자 중이라는 뜻임.', before: '😊😆', after: '너한테 잘 보이고 싶어' },
+];
+
+const coldRoasts = [
+  { text: '이건 관심 없다는 거야. 1글자 답장은 "꺼져"의 다른 표현임.', before: 'ㅇㅇ ㅋ', after: '관심없어 그만해' },
+  { text: '답장 속도가 너무 느림. 핸드폰 안 보는 게 아니라 네 톡은 안 보는 거임.', before: '(3시간 뒤) 응', after: '딱히 관심 없음' },
+  { text: '물음표가 하나도 없음 = 질문 안 함 = 대화 이어갈 생각 없음.', before: '그렇구나', after: '더 할 말 없어' },
+  { text: '"응 ㅋ"은 감정 공백 상태임. 여기서 더 밀면 프레셔가 됨.', before: '응 ㅋ', after: '귀찮아 그만해' },
+  { text: '읽씹 2번 이상이면 패턴임. 바쁜 게 아니라 우선순위가 낮은 거임.', before: '(읽음)', after: '답할 의미를 못 느낌' },
+];
+
+const hotVerdicts = [
+  '이 흐름이면 자연스럽게 다음 단계 생김',
+  '지금 분위기 좋음. 기회 잡아라',
+  '상대 관심도 최상. 밀어붙여도 됨',
+  '이 정도면 확실히 가능성 있음',
+  '오늘 밤 흐름 좋음. 망설이지 마라',
+];
+
+const coldVerdicts = [
+  '지금 보내면 마이너스 시작함',
+  '여기서 멈춰야 손해 안 봄',
+  '오늘은 아닌 날임. 쿨하게 빠져라',
+  '더 밀면 부담 줌. 기다려라',
+  '관심 없다는 신호임. 인정해라',
+];
+
+const hotKeywords = [
+  ['적극적', '관심폭발', '오늘각', '설렘가득', '유혹중'],
+  ['ㅋㅋ많음', '이모지', '질문많음', '빠른답장', '호감'],
+  ['장난침', '연장각', '만나자', '뭐해', '재밌음'],
+];
+
+const coldKeywords = [
+  ['읽씹', '철벽', '어장관리', 'ㅋ', '바쁨'],
+  ['단답', '느린답장', '무관심', '건조함', '끝'],
+  ['귀찮음', '물음표없음', '무반응', '에너지없음', '회피'],
+];
+
+const hotActions = [
+  [
+    { type: 'flirt', message: '두쫀쿠는 핑계고 그냥 더 같이 있고 싶음', risk: 'high' },
+    { type: 'tease', message: '이 분위기에서 집 가자는 건 예의 아님', risk: 'medium' },
+    { type: 'sweet', message: '오늘은 집 가면 후회하는 날임', risk: 'safe' }
+  ],
+  [
+    { type: 'flirt', message: '지금 헤어지면 오늘 스토리 노잼됨', risk: 'high' },
+    { type: 'tease', message: '이거 마시면 오늘 끝내기 아까움', risk: 'medium' },
+    { type: 'sweet', message: '오늘은 집 가면 손해임', risk: 'safe' }
+  ],
+  [
+    { type: 'flirt', message: '이 정도면 아직 2차임', risk: 'high' },
+    { type: 'tease', message: '지금 들어가면 오늘 기억 흐려짐', risk: 'medium' },
+    { type: 'sweet', message: '이렇게 웃고 헤어지긴 아까움', risk: 'safe' }
+  ],
+];
+
+function generateResult() {
+  const isHot = Math.random() > 0.35;
+  const randIdx = Math.floor(Math.random() * 5);
+  const kwIdx = Math.floor(Math.random() * 3);
+  const actIdx = Math.floor(Math.random() * 3);
+
+  if (isHot) {
+    const roast = hotRoasts[randIdx];
+    return {
+      score: 65 + Math.floor(Math.random() * 30), // 65-95%
+      type: 'hot',
+      verdict: 'GO',
+      verdictMessage: hotVerdicts[randIdx],
+      keywords: hotKeywords[kwIdx].map(text => ({ text, type: 'bubble', sentiment: 'positive' })),
+      insight: { persona: '카사노바', ...roast },
+      actionCards: hotActions[actIdx]
+    };
+  } else {
+    const roast = coldRoasts[randIdx];
+    return {
+      score: 5 + Math.floor(Math.random() * 35), // 5-40%
+      type: 'cold',
+      verdict: 'STOP',
+      verdictMessage: coldVerdicts[randIdx],
+      keywords: coldKeywords[kwIdx].map(text => ({ text, type: 'brick', sentiment: 'negative' })),
+      insight: { persona: '독설가', ...roast },
+      actionCards: [
+        { type: 'cold', message: '오늘은 여기까지인 듯~ 담에 봐!', risk: 'safe' },
+        { type: 'tease', message: '답장 그렇게 하면 재미없는 사람 돼요~', risk: 'medium' },
+        { type: 'cold', message: '(읽고 조용히 빠지기)', risk: 'high', locked: true }
+      ]
+    };
   }
-};
+}
+
 
 export default function ResultPage() {
   const router = useRouter();
@@ -98,14 +145,34 @@ export default function ResultPage() {
   const [showInstaGuide, setShowInstaGuide] = useState(false);
 
   useEffect(() => {
-    // Randomly select hot or cold result for demo
-    const isHot = Math.random() > 0.35;
-    const selectedResult = isHot ? { ...mockResults.hot } : { ...mockResults.cold };
+    let selectedResult = null;
 
-    // Recalculate score for this instance
-    selectedResult.score = isHot
-      ? 75 + Math.floor(Math.random() * 20)
-      : 10 + Math.floor(Math.random() * 25);
+    // 1. 저장된 대화 내용 확인 (텍스트 입력 모드)
+    const savedChatText = typeof window !== 'undefined'
+      ? localStorage.getItem('tc_chat_input')
+      : null;
+
+    if (savedChatText && savedChatText.trim().length > 0) {
+      // 실제 대화 분석 모드
+      try {
+        const { analyzeChatText } = require('@/lib/chatAnalyzer');
+        const analyzed = analyzeChatText(savedChatText);
+
+        if (analyzed) {
+          selectedResult = analyzed;
+          // 분석 완료 후 삭제 (다음번엔 랜덤)
+          localStorage.removeItem('tc_chat_input');
+        }
+      } catch (error) {
+        console.error('[분석 엔진 오류]', error);
+        // 오류 시 fallback to 랜덤
+      }
+    }
+
+    // 2. 대화 내용이 없거나 분석 실패 시 랜덤 생성 (기존 로직)
+    if (!selectedResult) {
+      selectedResult = generateResult();
+    }
 
     // Add unique IDs to keywords
     const objectsWithIds = selectedResult.keywords.map((k, i) => ({
@@ -131,6 +198,7 @@ export default function ResultPage() {
     });
 
     // Trigger confetti for hot results
+    const isHot = selectedResult.type === 'hot' || selectedResult.score >= 65;
     if (isHot) {
       setTimeout(() => setShowConfetti(true), 800);
     }

@@ -76,6 +76,35 @@ export default function Home() {
     useOneCredit();
     setRemaining(getRemainingUses());
     setIsLoading(true);
+
+    try {
+      // 이미지를 FormData로 변환
+      const formData = new FormData();
+      formData.append('image', file);
+
+      // API 호출하여 텍스트 추출
+      const response = await fetch('/api/analyze-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.chatText) {
+        // 추출된 텍스트를 localStorage에 저장 (분석 엔진이 사용)
+        localStorage.setItem('tc_chat_input', data.chatText);
+      } else {
+        console.warn('[OCR 실패] 랜덤 결과 사용:', data.error);
+        // 실패 시 localStorage 제거 (랜덤 결과 생성)
+        localStorage.removeItem('tc_chat_input');
+      }
+    } catch (error) {
+      console.error('[API 호출 실패]', error);
+      // 오류 시에도 랜덤 결과 생성
+      localStorage.removeItem('tc_chat_input');
+    }
+
+    // 블랙홀 애니메이션 시작
     setShowBlackHole(true);
   }, []);
 
@@ -116,6 +145,11 @@ export default function Home() {
       return;
     }
 
+    // 데모 모드: 저장된 대화 내용 제거 (랜덤 결과 생성)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('tc_chat_input');
+    }
+
     useOneCredit();
     setRemaining(getRemainingUses());
     setIsLoading(true);
@@ -133,11 +167,15 @@ export default function Home() {
       return;
     }
 
+    // 대화 내용 저장 (분석 엔진에서 사용)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tc_chat_input', chatText);
+    }
+
     useOneCredit();
     setRemaining(getRemainingUses());
     setIsLoading(true);
     setShowBlackHole(true);
-    // In production, would send chatText to API
   }, [chatText]);
 
   return (
