@@ -14,159 +14,159 @@ import { addHistory, createHistoryItem } from '@/lib/history';
 import { maybePromptLogin } from '@/lib/useCounter';
 import { isNightKst, shouldLockAction } from '@/lib/nightMode';
 import { trackResultView, trackActionCopy, trackLockedActionClick, trackShareSuccess, trackShareRewardGranted } from '@/lib/analytics';
-import { saveShareCardPng } from '@/lib/share';
+import { saveShareCardPng, buildStoryCaption } from '@/lib/share';
 import { shouldShowInstaGuide, markInstaGuideShown } from '@/lib/instaGuide';
 
 // Dynamic import to avoid SSR issues with Matter.js
 const PhysicsWorld = dynamic(() => import('@/components/PhysicsWorld'), {
-    ssr: false,
-    loading: () => (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100vh',
-            background: '#000'
-        }}>
-            <div className="loading-spinner" />
-        </div>
-    )
+  ssr: false,
+  loading: () => (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      background: '#000'
+    }}>
+      <div className="loading-spinner" />
+    </div>
+  )
 });
 
 // Mock analysis results for MVP demo
 const mockResults = {
-    hot: {
-        score: 75 + Math.floor(Math.random() * 20), // 75-95%
-        type: 'hot',
-        verdict: 'GO',
-        verdictMessage: '게임 끝. 당장 만나자고 해.',
-        keywords: [
-            { text: '적극적', type: 'bubble', sentiment: 'positive' },
-            { text: '관심폭발', type: 'bubble', sentiment: 'positive' },
-            { text: '오늘각', type: 'bubble', sentiment: 'positive' },
-            { text: '설렘가득', type: 'bubble', sentiment: 'positive' },
-            { text: '유혹중', type: 'bubble', sentiment: 'positive' },
-        ],
-        insight: {
-            persona: '카사노바',
-            text: '상대방은 디저트를 핑계로 너랑 술 마시고 싶은 거임. 눈치 좀 챙겨.',
-            before: '디저트 먹고 싶다~',
-            after: '너랑 더 시간 보내고 싶어'
-        },
-        actionCards: [
-            { type: 'flirt', message: '혼자 먹으면 맛없는데... 우리 집으로 시킬까?', risk: 'high' },
-            { type: 'tease', message: '사주는 건 쉬운데 넌 뭐 해줄 건데?😏', risk: 'medium' },
-            { type: 'sweet', message: '마침 나도 단 거 땡겼어! 어디서 볼까?', risk: 'safe' }
-        ]
+  hot: {
+    score: 75 + Math.floor(Math.random() * 20), // 75-95%
+    type: 'hot',
+    verdict: 'GO',
+    verdictMessage: '게임 끝. 당장 만나자고 해.',
+    keywords: [
+      { text: '적극적', type: 'bubble', sentiment: 'positive' },
+      { text: '관심폭발', type: 'bubble', sentiment: 'positive' },
+      { text: '오늘각', type: 'bubble', sentiment: 'positive' },
+      { text: '설렘가득', type: 'bubble', sentiment: 'positive' },
+      { text: '유혹중', type: 'bubble', sentiment: 'positive' },
+    ],
+    insight: {
+      persona: '카사노바',
+      text: '상대방은 디저트를 핑계로 너랑 술 마시고 싶은 거임. 눈치 좀 챙겨.',
+      before: '디저트 먹고 싶다~',
+      after: '너랑 더 시간 보내고 싶어'
     },
-    cold: {
-        score: 10 + Math.floor(Math.random() * 25), // 10-35%
-        type: 'cold',
-        verdict: 'STOP',
-        verdictMessage: '오늘 밤은 혼자 자라.',
-        keywords: [
-            { text: '읽씹', type: 'brick', sentiment: 'negative' },
-            { text: '철벽', type: 'brick', sentiment: 'negative' },
-            { text: '어장관리', type: 'brick', sentiment: 'negative' },
-            { text: 'ㅋ', type: 'brick', sentiment: 'negative' },
-            { text: '바쁨', type: 'brick', sentiment: 'negative' },
-        ],
-        insight: {
-            persona: '독설가',
-            text: '이건 관심 없다는 거야. 1글자 답장은 "꺼져"의 다른 표현임.',
-            before: 'ㅇㅇ ㅋ',
-            after: '관심없어 그만해'
-        },
-        actionCards: [
-            { type: 'cold', message: '바쁜가보네~ 나중에 연락해!', risk: 'safe' },
-            { type: 'tease', message: '답장 그렇게 하면 재미없는 사람 돼요~', risk: 'medium' },
-            { type: 'cold', message: '(읽고 씹기)', risk: 'high', locked: true }
-        ]
-    }
+    actionCards: [
+      { type: 'flirt', message: '혼자 먹으면 맛없는데... 우리 집으로 시킬까?', risk: 'high' },
+      { type: 'tease', message: '사주는 건 쉬운데 넌 뭐 해줄 건데?😏', risk: 'medium' },
+      { type: 'sweet', message: '마침 나도 단 거 땡겼어! 어디서 볼까?', risk: 'safe' }
+    ]
+  },
+  cold: {
+    score: 10 + Math.floor(Math.random() * 25), // 10-35%
+    type: 'cold',
+    verdict: 'STOP',
+    verdictMessage: '오늘 밤은 혼자 자라.',
+    keywords: [
+      { text: '읽씹', type: 'brick', sentiment: 'negative' },
+      { text: '철벽', type: 'brick', sentiment: 'negative' },
+      { text: '어장관리', type: 'brick', sentiment: 'negative' },
+      { text: 'ㅋ', type: 'brick', sentiment: 'negative' },
+      { text: '바쁨', type: 'brick', sentiment: 'negative' },
+    ],
+    insight: {
+      persona: '독설가',
+      text: '이건 관심 없다는 거야. 1글자 답장은 "꺼져"의 다른 표현임.',
+      before: 'ㅇㅇ ㅋ',
+      after: '관심없어 그만해'
+    },
+    actionCards: [
+      { type: 'cold', message: '바쁜가보네~ 나중에 연락해!', risk: 'safe' },
+      { type: 'tease', message: '답장 그렇게 하면 재미없는 사람 돼요~', risk: 'medium' },
+      { type: 'cold', message: '(읽고 씹기)', risk: 'high', locked: true }
+    ]
+  }
 };
 
 export default function ResultPage() {
-    const router = useRouter();
-    const [result, setResult] = useState(null);
-    const [objects, setObjects] = useState([]);
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
-    const [activeTab, setActiveTab] = useState('verdict');
-    const [showConfetti, setShowConfetti] = useState(false);
-    const [showLoginModal, setShowLoginModal] = useState(false);
-    const [isNight, setIsNight] = useState(false);
-    const [showInstaGuide, setShowInstaGuide] = useState(false);
+  const router = useRouter();
+  const [result, setResult] = useState(null);
+  const [objects, setObjects] = useState([]);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('verdict');
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isNight, setIsNight] = useState(false);
+  const [showInstaGuide, setShowInstaGuide] = useState(false);
 
-    useEffect(() => {
-        // Randomly select hot or cold result for demo
-        const isHot = Math.random() > 0.35;
-        const selectedResult = isHot ? { ...mockResults.hot } : { ...mockResults.cold };
+  useEffect(() => {
+    // Randomly select hot or cold result for demo
+    const isHot = Math.random() > 0.35;
+    const selectedResult = isHot ? { ...mockResults.hot } : { ...mockResults.cold };
 
-        // Recalculate score for this instance
-        selectedResult.score = isHot
-            ? 75 + Math.floor(Math.random() * 20)
-            : 10 + Math.floor(Math.random() * 25);
+    // Recalculate score for this instance
+    selectedResult.score = isHot
+      ? 75 + Math.floor(Math.random() * 20)
+      : 10 + Math.floor(Math.random() * 25);
 
-        // Add unique IDs to keywords
-        const objectsWithIds = selectedResult.keywords.map((k, i) => ({
-            ...k,
-            id: `obj-${i}-${Date.now()}`
-        }));
+    // Add unique IDs to keywords
+    const objectsWithIds = selectedResult.keywords.map((k, i) => ({
+      ...k,
+      id: `obj-${i}-${Date.now()}`
+    }));
 
-        setResult(selectedResult);
+    setResult(selectedResult);
 
-        // Check night mode
-        setIsNight(isNightKst());
+    // Check night mode
+    setIsNight(isNightKst());
 
-        // Save to history
-        const historyItem = createHistoryItem(selectedResult);
-        addHistory(historyItem);
+    // Save to history
+    const historyItem = createHistoryItem(selectedResult);
+    addHistory(historyItem);
 
-        // Track analytics
-        trackResultView(selectedResult.score, selectedResult.verdict);
+    // Track analytics
+    trackResultView(selectedResult.score, selectedResult.verdict);
 
-        // Maybe show login modal (3rd/6th use)
-        maybePromptLogin(() => {
-            setTimeout(() => setShowLoginModal(true), 2000);
-        });
+    // Maybe show login modal (3rd/6th use)
+    maybePromptLogin(() => {
+      setTimeout(() => setShowLoginModal(true), 2000);
+    });
 
-        // Trigger confetti for hot results
-        if (isHot) {
-            setTimeout(() => setShowConfetti(true), 800);
-        }
+    // Trigger confetti for hot results
+    if (isHot) {
+      setTimeout(() => setShowConfetti(true), 800);
+    }
 
-        // Stagger the object drops
-        setTimeout(() => {
-            setObjects(objectsWithIds);
-        }, 500);
-    }, []);
+    // Stagger the object drops
+    setTimeout(() => {
+      setObjects(objectsWithIds);
+    }, 500);
+  }, []);
 
-    const handleObjectClick = useCallback((objectData, body) => {
-        console.log('Clicked:', objectData);
-    }, []);
+  const handleObjectClick = useCallback((objectData, body) => {
+    console.log('Clicked:', objectData);
+  }, []);
 
-    const handleObjectPop = useCallback((objectData) => {
-        // Pop action
-    }, []);
+  const handleObjectPop = useCallback((objectData) => {
+    // Pop action
+  }, []);
 
-    const handleCopy = useCallback((message) => {
-        setToastMessage(`"${message.slice(0, 20)}..." 복사됨!`);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 2000);
-    }, []);
+  const handleCopy = useCallback((message) => {
+    setToastMessage(`"${message.slice(0, 20)}..." 복사됨!`);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  }, []);
 
-    const handleReset = useCallback(() => {
-        router.push('/');
-    }, [router]);
+  const handleReset = useCallback(() => {
+    router.push('/');
+  }, [router]);
 
-    const handleShare = useCallback(async (from = 'button') => {
-        if (!result) return;
+  const handleShare = useCallback(async (from = 'button') => {
+    if (!result) return;
 
-        // Track share click
-        trackShareSuccess();
+    // Track share click
+    trackShareSuccess();
 
-        // Viral share text
-        const shareText = `오늘 밤 성공확률 ${result.score}%… 너라면 뭐 보냄?
+    // Viral share text
+    const shareText = `오늘 밤 성공확률 ${result.score}%… 너라면 뭐 보냄?
 
 ${result.verdict === 'GO' ? '🟢 GO!' : '🔴 STOP'} - ${result.verdictMessage}
 
@@ -174,276 +174,286 @@ ${result.verdict === 'GO' ? '🟢 GO!' : '🔴 STOP'} - ${result.verdictMessage}
 ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.vercel.app'}/result-preview?c=${result.score}&v=${result.verdict}
 #톡캐디 #딸깍연애단`;
 
-        let shared = false;
+    let shared = false;
 
-        // Try Web Share API first (mobile)
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: '톡캐디 판정서',
-                    text: shareText
-                });
-                shared = true;
-            } catch (err) {
-                // User cancelled, try clipboard
-            }
-        }
-
-        // Fallback: Copy to clipboard
-        if (!shared) {
-            try {
-                await navigator.clipboard.writeText(shareText);
-                shared = true;
-            } catch (err) {
-                const textArea = document.createElement('textarea');
-                textArea.value = shareText;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                shared = true;
-            }
-        }
-
-        if (shared) {
-            // Grant share bonus
-            const bonusGranted = grantShareBonus();
-            if (bonusGranted) {
-                trackShareRewardGranted(getFreeLeft());
-                setToastMessage(`🎁 공유 보상 +1회 지급됨! (남은 무료 ${getFreeLeft()}회)`);
-            } else {
-                setToastMessage('📋 공유 완료! (오늘 보상 한도 도달)');
-            }
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }
-    }, [result]);
-
-    // 인스타 스토리 저장
-    const handleInstaSave = useCallback(async () => {
-        const r = await saveShareCardPng();
-        if (!r.ok) {
-            setToastMessage('❌ 저장 실패 - 다시 시도해주세요');
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-            return;
-        }
-
-        // 저장도 공유 보상 지급
-        const rewarded = grantShareBonus();
-        const left = getFreeLeft();
-
-        if (rewarded) {
-            trackShareRewardGranted(left);
-            setToastMessage(`🎁 저장 완료! +1회 (남은 ${left}회) 📸 스토리에 올려봐!`);
-        } else {
-            setToastMessage('📸 저장 완료! 인스타 → 스토리 → 갤러리에서 선택 ㄱ');
-        }
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 4000);
-
-        // 1회만 인스타 가이드 표시
-        if (shouldShowInstaGuide()) {
-            setTimeout(() => setShowInstaGuide(true), 500);
-            markInstaGuideShown();
-        }
-    }, []);
-
-    if (!result) {
-        return (
-            <main className="main-container">
-                <div className="loading-container">
-                    <div className="loading-spinner" />
-                    <div style={{ color: 'var(--neon-pink)', marginTop: '1rem' }}>
-                        분석 중...
-                    </div>
-                </div>
-            </main>
-        );
+    // Try Web Share API first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '톡캐디 판정서',
+          text: shareText
+        });
+        shared = true;
+      } catch (err) {
+        // User cancelled, try clipboard
+      }
     }
 
+    // Fallback: Copy to clipboard
+    if (!shared) {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        shared = true;
+      } catch (err) {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        shared = true;
+      }
+    }
+
+    if (shared) {
+      // Grant share bonus
+      const bonusGranted = grantShareBonus();
+      if (bonusGranted) {
+        trackShareRewardGranted(getFreeLeft());
+        setToastMessage(`🎁 공유 보상 +1회 지급됨! (남은 무료 ${getFreeLeft()}회)`);
+      } else {
+        setToastMessage('📋 공유 완료! (오늘 보상 한도 도달)');
+      }
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+  }, [result]);
+
+  // 인스타 스토리 저장
+  const handleInstaSave = useCallback(async () => {
+    if (!result) return;
+
+    const r = await saveShareCardPng();
+    if (!r.ok) {
+      setToastMessage('❌ 저장 실패 - 다시 시도해주세요');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+
+    // 스토리 캡션 자동 복사
+    const caption = buildStoryCaption(result);
+    try {
+      await navigator.clipboard.writeText(caption);
+    } catch { }
+
+    // 저장도 공유 보상 지급
+    const rewarded = grantShareBonus();
+    const left = getFreeLeft();
+
+    if (rewarded) {
+      trackShareRewardGranted(left);
+      setToastMessage(`🎁 저장 완료! +1회 📋 문구도 복사됨 - 붙여넣기만!`);
+    } else {
+      setToastMessage('📸 저장 완료! 📋 문구 복사됨 - 스토리에 붙여넣기!');
+    }
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+
+    // 1회만 인스타 가이드 표시
+    if (shouldShowInstaGuide()) {
+      setTimeout(() => setShowInstaGuide(true), 500);
+      markInstaGuideShown();
+    }
+  }, [result]);
+
+  if (!result) {
     return (
-        <main className="result-main">
-            {/* Physics world background */}
-            <PhysicsWorld
-                objects={objects}
-                gravityType={result.type === 'hot' ? 'anti' : 'normal'}
-                onObjectClick={handleObjectClick}
-                onObjectPop={handleObjectPop}
+      <main className="main-container">
+        <div className="loading-container">
+          <div className="loading-spinner" />
+          <div style={{ color: 'var(--neon-pink)', marginTop: '1rem' }}>
+            분석 중...
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="result-main">
+      {/* Physics world background */}
+      <PhysicsWorld
+        objects={objects}
+        gravityType={result.type === 'hot' ? 'anti' : 'normal'}
+        onObjectClick={handleObjectClick}
+        onObjectPop={handleObjectPop}
+      />
+
+      {/* Confetti celebration for hot results */}
+      <Confetti isActive={showConfetti} type={result.type === 'hot' ? 'success' : 'fail'} />
+
+      {/* Night mode warning banner */}
+      <NightModeBanner />
+
+      {/* Login modal for 3rd/6th use */}
+      <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
+
+      {/* Content overlay */}
+      <div className="result-content">
+        {/* 인스타/공유용 캡처 카드 - 9:16 스토리 캔버스 */}
+        <div id="share-card" className="story-canvas">
+          <div className="canvas-hint-top">AI가 판단한 오늘 밤 흐름</div>
+          <div className={`share-card-inner ${result.verdict === 'GO' ? 'go-anim' : 'stop-anim'}`}>
+            <div className="share-card-header">
+              <span>톡캐디 판정서</span>
+              <span className="header-right">
+                {isNight && <span className="badge-night">🌙 심야 생존자</span>}
+                {new Date().toLocaleDateString('ko-KR')}
+              </span>
+            </div>
+
+            <div className="share-card-main">
+              <div className="share-score">
+                <span className="score-number">{result.score}%</span>
+                <span className="score-label">유사 대화 기준</span>
+              </div>
+              <div className="share-verdict">
+                <span className={`verdict-badge ${result.verdict === 'GO' ? 'go' : 'stop'}`}>
+                  {result.verdict === 'GO' ? 'GO 🔥' : 'STOP'}
+                </span>
+                <span className="verdict-sub">{result.verdict === 'GO' ? '밀어붙여' : '그만해'}</span>
+              </div>
+            </div>
+
+            <div className="share-card-roast">
+              <span className="roast-label">독설</span>
+              <p>{result.insight?.text || result.verdictMessage}</p>
+            </div>
+
+            <div className="share-card-footer">
+              <span>talkcaddy</span>
+              <span>solar-curie.vercel.app</span>
+            </div>
+          </div>
+          <div className="canvas-hint-bottom">지금 답장 하나로 결과가 바뀜</div>
+        </div>
+
+        {/* Speed Gauge */}
+        <SpeedGauge score={result.score} verdict={result.verdict} />
+
+        {/* Verdict message */}
+        <p className="verdict-message">{result.verdictMessage}</p>
+
+        {/* Tab navigation */}
+        <div className="tab-nav">
+          <button
+            className={`tab-btn ${activeTab === 'verdict' ? 'active' : ''}`}
+            onClick={() => setActiveTab('verdict')}
+          >
+            🎯 판정
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'insight' ? 'active' : ''}`}
+            onClick={() => setActiveTab('insight')}
+          >
+            🎭 독설
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'cards' ? 'active' : ''}`}
+            onClick={() => setActiveTab('cards')}
+          >
+            💬 액션
+          </button>
+        </div>
+
+        {/* Tab content */}
+        <div className="tab-content">
+          {activeTab === 'verdict' && (
+            <div className="keywords-grid">
+              {result.keywords.map((k, i) => (
+                <span
+                  key={i}
+                  className={`keyword-tag ${k.sentiment}`}
+                >
+                  {k.text}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'insight' && (
+            <InsightBox
+              persona={result.insight.persona}
+              insight={result.insight.text}
+              beforeText={result.insight.before}
+              afterText={result.insight.after}
             />
+          )}
 
-            {/* Confetti celebration for hot results */}
-            <Confetti isActive={showConfetti} type={result.type === 'hot' ? 'success' : 'fail'} />
-
-            {/* Night mode warning banner */}
-            <NightModeBanner />
-
-            {/* Login modal for 3rd/6th use */}
-            <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
-
-            {/* Content overlay */}
-            <div className="result-content">
-                {/* 인스타/공유용 캡처 카드 - 9:16 스토리 캔버스 */}
-                <div id="share-card" className="story-canvas">
-                    <div className="share-card-inner">
-                        <div className="share-card-header">
-                            <span>톡캐디 판정서</span>
-                            <span className="header-right">
-                                {isNight && <span className="badge-night">🌙 심야 생존자</span>}
-                                {new Date().toLocaleDateString('ko-KR')}
-                            </span>
-                        </div>
-
-                        <div className="share-card-main">
-                            <div className="share-score">
-                                <span className="score-number">{result.score}%</span>
-                                <span className="score-label">유사 대화 기준</span>
-                            </div>
-                            <div className="share-verdict">
-                                <span className={`verdict-badge ${result.verdict === 'GO' ? 'go' : 'stop'}`}>
-                                    {result.verdict}
-                                </span>
-                                <span className="verdict-sub">{result.verdict === 'GO' ? '밀어붙여' : '그만해'}</span>
-                            </div>
-                        </div>
-
-                        <div className="share-card-roast">
-                            <span className="roast-label">독설</span>
-                            <p>{result.insight?.text || result.verdictMessage}</p>
-                        </div>
-
-                        <div className="share-card-footer">
-                            <span>talkcaddy</span>
-                            <span>solar-curie.vercel.app</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Speed Gauge */}
-                <SpeedGauge score={result.score} verdict={result.verdict} />
-
-                {/* Verdict message */}
-                <p className="verdict-message">{result.verdictMessage}</p>
-
-                {/* Tab navigation */}
-                <div className="tab-nav">
-                    <button
-                        className={`tab-btn ${activeTab === 'verdict' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('verdict')}
-                    >
-                        🎯 판정
-                    </button>
-                    <button
-                        className={`tab-btn ${activeTab === 'insight' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('insight')}
-                    >
-                        🎭 독설
-                    </button>
-                    <button
-                        className={`tab-btn ${activeTab === 'cards' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('cards')}
-                    >
-                        💬 액션
-                    </button>
-                </div>
-
-                {/* Tab content */}
-                <div className="tab-content">
-                    {activeTab === 'verdict' && (
-                        <div className="keywords-grid">
-                            {result.keywords.map((k, i) => (
-                                <span
-                                    key={i}
-                                    className={`keyword-tag ${k.sentiment}`}
-                                >
-                                    {k.text}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-
-                    {activeTab === 'insight' && (
-                        <InsightBox
-                            persona={result.insight.persona}
-                            insight={result.insight.text}
-                            beforeText={result.insight.before}
-                            afterText={result.insight.after}
-                        />
-                    )}
-
-                    {activeTab === 'cards' && (
-                        <div className="cards-grid">
-                            {result.actionCards.map((card, i) => {
-                                // 밤 + 고위험 = 잠금
-                                const shouldLock = card.locked || (isNight && card.risk === 'high');
-                                return (
-                                    <ActionCard
-                                        key={i}
-                                        type={card.type}
-                                        message={card.message}
-                                        risk={card.risk}
-                                        locked={shouldLock}
-                                        onCopy={handleCopy}
-                                    />
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
+          {activeTab === 'cards' && (
+            <div className="cards-grid">
+              {result.actionCards.map((card, i) => {
+                // 밤 + 고위험 = 잠금
+                const shouldLock = card.locked || (isNight && card.risk === 'high');
+                return (
+                  <ActionCard
+                    key={i}
+                    type={card.type}
+                    message={card.message}
+                    risk={card.risk}
+                    locked={shouldLock}
+                    onCopy={handleCopy}
+                  />
+                );
+              })}
             </div>
+          )}
+        </div>
+      </div>
 
-            {/* Action buttons */}
-            <div className="action-buttons">
-                <button className="action-btn secondary" onClick={handleReset}>
-                    🔄 다시하기
-                </button>
-                <button className="action-btn primary" onClick={handleShare}>
-                    📤 공유하기
-                </button>
+      {/* Action buttons */}
+      <div className="action-buttons">
+        <button className="action-btn secondary" onClick={handleReset}>
+          🔄 다시하기
+        </button>
+        <button className="action-btn primary" onClick={handleShare}>
+          📤 공유하기
+        </button>
+      </div>
+
+      {/* History saved feedback */}
+      <div className="history-saved">
+        ✅ 보관함에 저장됨
+      </div>
+
+      {/* Sticky CTA bar (bottom fixed) - 3 buttons */}
+      <div className="sticky-cta-bar">
+        <button className="cta-share-btn" onClick={() => handleShare('sticky_bar')}>
+          🎉 자랑하기 +1
+        </button>
+        <button className="cta-insta-btn" onClick={handleInstaSave}>
+          📸 스토리 올리기
+        </button>
+        <button className="cta-retry-btn" onClick={handleReset}>
+          🔄
+        </button>
+      </div>
+
+      {/* Toast notification */}
+      {showToast && (
+        <div className="toast-notification">
+          {toastMessage}
+        </div>
+      )}
+
+      {/* 인스타 스토리 가이드 (1회만) */}
+      {showInstaGuide && (
+        <div className="insta-guide-overlay" onClick={() => setShowInstaGuide(false)}>
+          <div className="insta-guide-modal" onClick={e => e.stopPropagation()}>
+            <div className="guide-title">📸 인스타 스토리 올리는 법</div>
+            <div className="guide-content">
+              인스타 → <b>스토리</b> → <b>갤러리</b>에서<br />
+              방금 저장한 이미지 선택하면 됨
             </div>
+            <button className="guide-btn" onClick={() => setShowInstaGuide(false)}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
 
-            {/* History saved feedback */}
-            <div className="history-saved">
-                ✅ 보관함에 저장됨
-            </div>
-
-            {/* Sticky CTA bar (bottom fixed) - 3 buttons */}
-            <div className="sticky-cta-bar">
-                <button className="cta-share-btn" onClick={() => handleShare('sticky_bar')}>
-                    📤 공유 +1
-                </button>
-                <button className="cta-insta-btn" onClick={handleInstaSave}>
-                    📸 스토리 저장
-                </button>
-                <button className="cta-retry-btn" onClick={handleReset}>
-                    🔄
-                </button>
-            </div>
-
-            {/* Toast notification */}
-            {showToast && (
-                <div className="toast-notification">
-                    {toastMessage}
-                </div>
-            )}
-
-            {/* 인스타 스토리 가이드 (1회만) */}
-            {showInstaGuide && (
-                <div className="insta-guide-overlay" onClick={() => setShowInstaGuide(false)}>
-                    <div className="insta-guide-modal" onClick={e => e.stopPropagation()}>
-                        <div className="guide-title">📸 인스타 스토리 올리는 법</div>
-                        <div className="guide-content">
-                            인스타 → <b>스토리</b> → <b>갤러리</b>에서<br />
-                            방금 저장한 이미지 선택하면 됨
-                        </div>
-                        <button className="guide-btn" onClick={() => setShowInstaGuide(false)}>
-                            확인
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            <style jsx>{`
+      <style jsx>{`
         .result-main {
           min-height: 100vh;
           background: #000;
@@ -617,14 +627,24 @@ ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.
           max-width: 360px;
           aspect-ratio: 9 / 16;
           margin: 0 auto 20px;
-          padding: 40px 20px;
+          padding: 30px 20px;
           box-sizing: border-box;
           display: flex;
+          flex-direction: column;
           align-items: center;
-          justify-content: center;
+          justify-content: space-between;
           background: radial-gradient(circle at 30% 20%, rgba(255,0,150,0.35), rgba(0,0,0,0.95) 55%);
           border-radius: 24px;
           border: 1px solid rgba(255,255,255,0.1);
+        }
+        .canvas-hint-top, .canvas-hint-bottom {
+          font-size: 0.75rem;
+          color: rgba(255,255,255,0.5);
+          text-align: center;
+        }
+        .canvas-hint-bottom {
+          font-weight: 500;
+          color: rgba(255,255,255,0.6);
         }
         .share-card-inner {
           width: 100%;
@@ -633,6 +653,24 @@ ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.
           border-radius: 20px;
           border: 1px solid rgba(255,255,255,0.1);
           backdrop-filter: blur(10px);
+        }
+        @keyframes pulseGlow {
+          0% { box-shadow: 0 0 0 rgba(57,255,20,0.0); }
+          50% { box-shadow: 0 0 35px rgba(57,255,20,0.4); }
+          100% { box-shadow: 0 0 0 rgba(57,255,20,0.0); }
+        }
+        @keyframes stopShake {
+          0% { transform: translateX(0); }
+          25% { transform: translateX(-3px); }
+          50% { transform: translateX(3px); }
+          75% { transform: translateX(-3px); }
+          100% { transform: translateX(0); }
+        }
+        .go-anim {
+          animation: pulseGlow 2.4s ease-in-out infinite;
+        }
+        .stop-anim {
+          animation: stopShake 0.5s ease-in-out 1;
         }
         .share-card-header {
           display: flex;
@@ -761,6 +799,6 @@ ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.
           cursor: pointer;
         }
       `}</style>
-        </main>
-    );
+    </main>
+  );
 }
