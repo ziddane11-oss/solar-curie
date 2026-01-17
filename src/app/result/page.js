@@ -15,6 +15,7 @@ import { maybePromptLogin } from '@/lib/useCounter';
 import { isNightKst, shouldLockAction } from '@/lib/nightMode';
 import { trackResultView, trackActionCopy, trackLockedActionClick, trackShareSuccess, trackShareRewardGranted } from '@/lib/analytics';
 import { saveShareCardPng } from '@/lib/share';
+import { shouldShowInstaGuide, markInstaGuideShown } from '@/lib/instaGuide';
 
 // Dynamic import to avoid SSR issues with Matter.js
 const PhysicsWorld = dynamic(() => import('@/components/PhysicsWorld'), {
@@ -94,6 +95,7 @@ export default function ResultPage() {
     const [showConfetti, setShowConfetti] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [isNight, setIsNight] = useState(false);
+    const [showInstaGuide, setShowInstaGuide] = useState(false);
 
     useEffect(() => {
         // Randomly select hot or cold result for demo
@@ -169,7 +171,7 @@ export default function ResultPage() {
 ${result.verdict === 'GO' ? '🟢 GO!' : '🔴 STOP'} - ${result.verdictMessage}
 
 👉 톡캐디 GRAVITY
-https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
+${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.vercel.app'}/result-preview?c=${result.score}&v=${result.verdict}
 #톡캐디 #딸깍연애단`;
 
         let shared = false;
@@ -239,6 +241,12 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
         }
         setShowToast(true);
         setTimeout(() => setShowToast(false), 4000);
+
+        // 1회만 인스타 가이드 표시
+        if (shouldShowInstaGuide()) {
+            setTimeout(() => setShowInstaGuide(true), 500);
+            markInstaGuideShown();
+        }
     }, []);
 
     if (!result) {
@@ -280,7 +288,10 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
                     <div className="share-card-inner">
                         <div className="share-card-header">
                             <span>톡캐디 판정서</span>
-                            <span>{new Date().toLocaleDateString('ko-KR')}</span>
+                            <span className="header-right">
+                                {isNight && <span className="badge-night">🌙 심야 생존자</span>}
+                                {new Date().toLocaleDateString('ko-KR')}
+                            </span>
                         </div>
 
                         <div className="share-card-main">
@@ -413,6 +424,22 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
             {showToast && (
                 <div className="toast-notification">
                     {toastMessage}
+                </div>
+            )}
+
+            {/* 인스타 스토리 가이드 (1회만) */}
+            {showInstaGuide && (
+                <div className="insta-guide-overlay" onClick={() => setShowInstaGuide(false)}>
+                    <div className="insta-guide-modal" onClick={e => e.stopPropagation()}>
+                        <div className="guide-title">📸 인스타 스토리 올리는 법</div>
+                        <div className="guide-content">
+                            인스타 → <b>스토리</b> → <b>갤러리</b>에서<br />
+                            방금 저장한 이미지 선택하면 됨
+                        </div>
+                        <button className="guide-btn" onClick={() => setShowInstaGuide(false)}>
+                            확인
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -681,6 +708,57 @@ https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
           justify-content: space-between;
           font-size: 0.7rem;
           color: rgba(255,255,255,0.4);
+        }
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .badge-night {
+          font-size: 0.7rem;
+          padding: 4px 10px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.10);
+          border: 1px solid rgba(255,255,255,0.12);
+        }
+        .insta-guide-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 999;
+          background: rgba(0,0,0,0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+        .insta-guide-modal {
+          width: 100%;
+          max-width: 320px;
+          background: white;
+          border-radius: 20px;
+          padding: 25px;
+          text-align: center;
+          color: #000;
+        }
+        .guide-title {
+          font-size: 1.1rem;
+          font-weight: 700;
+        }
+        .guide-content {
+          margin-top: 12px;
+          font-size: 0.9rem;
+          opacity: 0.8;
+          line-height: 1.5;
+        }
+        .guide-btn {
+          margin-top: 20px;
+          width: 100%;
+          padding: 14px;
+          border-radius: 12px;
+          border: 1px solid #ddd;
+          background: white;
+          font-weight: 600;
+          cursor: pointer;
         }
       `}</style>
         </main>
