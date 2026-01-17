@@ -156,61 +156,61 @@ export default function ResultPage() {
         router.push('/');
     }, [router]);
 
-    const handleShare = useCallback(async () => {
+    const handleShare = useCallback(async (from = 'button') => {
         if (!result) return;
 
-        // Random viral share prompts
-        const viralPrompts = [
-            "이 판정... 친구한테 보여주면 100% 웃김 ㅋㅋㅋ",
-            "너라면 이 상황에 뭐 보냄? 🤔",
-            result.verdict === 'GO' ? "톡캐디가 나 살렸다 ㅠㅠ" : "톡캐디가 나 죽였다..."
-        ];
-        const randomPrompt = viralPrompts[Math.floor(Math.random() * viralPrompts.length)];
+        // Track share click
+        trackShareSuccess();
 
-        const shareText = `🔥 톡캐디 GRAVITY 판정 🔥
+        // Viral share text
+        const shareText = `오늘 밤 성공확률 ${result.score}%… 너라면 뭐 보냄?
 
-${result.verdict === 'GO' ? '🟢' : '🔴'} ${result.score}% - ${result.verdictMessage}
+${result.verdict === 'GO' ? '🟢 GO!' : '🔴 STOP'} - ${result.verdictMessage}
 
-${randomPrompt}
+👉 톡캐디 GRAVITY
+https://solar-curie.vercel.app?c=${result.score}&v=${result.verdict}
+#톡캐디 #딸깍연애단`;
 
-👉 너도 해봐: https://solar-curie.vercel.app
-#톡캐디 #딸깍연애단 #답장러`;
+        let shared = false;
 
-        // Try Web Share API first (works on mobile)
+        // Try Web Share API first (mobile)
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: '톡캐디 GRAVITY',
+                    title: '톡캐디 판정서',
                     text: shareText
                 });
-                return;
+                shared = true;
             } catch (err) {
-                // User cancelled or share failed, fall through to clipboard
+                // User cancelled, try clipboard
             }
         }
 
         // Fallback: Copy to clipboard
-        try {
-            await navigator.clipboard.writeText(shareText);
+        if (!shared) {
+            try {
+                await navigator.clipboard.writeText(shareText);
+                shared = true;
+            } catch (err) {
+                const textArea = document.createElement('textarea');
+                textArea.value = shareText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                shared = true;
+            }
+        }
+
+        if (shared) {
             // Grant share bonus
             const bonusGranted = grantShareBonus();
             if (bonusGranted) {
-                setToastMessage('📋 복사됨! 🎁 공유 보너스 +1회 획득!');
+                trackShareRewardGranted(getFreeLeft());
+                setToastMessage(`🎁 공유 보상 +1회 지급됨! (남은 무료 ${getFreeLeft()}회)`);
             } else {
-                setToastMessage('📋 클립보드에 복사됨! 카톡에 붙여넣기 해봐!');
+                setToastMessage('📋 공유 완료! (오늘 보상 한도 도달)');
             }
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        } catch (err) {
-            // Final fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = shareText;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            grantShareBonus();
-            setToastMessage('📋 복사 완료! 🎁 +1회!');
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
         }
@@ -304,16 +304,20 @@ ${randomPrompt}
 
                     {activeTab === 'cards' && (
                         <div className="cards-grid">
-                            {result.actionCards.map((card, i) => (
-                                <ActionCard
-                                    key={i}
-                                    type={card.type}
-                                    message={card.message}
-                                    risk={card.risk}
-                                    locked={card.locked}
-                                    onCopy={handleCopy}
-                                />
-                            ))}
+                            {result.actionCards.map((card, i) => {
+                                // 밤 + 고위험 = 잠금
+                                const shouldLock = card.locked || (isNight && card.risk === 'high');
+                                return (
+                                    <ActionCard
+                                        key={i}
+                                        type={card.type}
+                                        message={card.message}
+                                        risk={card.risk}
+                                        locked={shouldLock}
+                                        onCopy={handleCopy}
+                                    />
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -326,6 +330,21 @@ ${randomPrompt}
                 </button>
                 <button className="action-btn primary" onClick={handleShare}>
                     📤 공유하기
+                </button>
+            </div>
+
+            {/* History saved feedback */}
+            <div className="history-saved">
+                ✅ 보관함에 저장됨
+            </div>
+
+            {/* Sticky CTA bar (bottom fixed) */}
+            <div className="sticky-cta-bar">
+                <button className="cta-share-btn" onClick={() => handleShare('sticky_bar')}>
+                    공유하고 +1 받기
+                </button>
+                <button className="cta-retry-btn" onClick={handleReset}>
+                    다시하기
                 </button>
             </div>
 
@@ -437,6 +456,52 @@ ${randomPrompt}
         @keyframes fadeIn {
           from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
           to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        .history-saved {
+          margin-top: 15px;
+          font-size: 0.85rem;
+          color: #39ff14;
+          opacity: 0.8;
+        }
+        .sticky-cta-bar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 100;
+          padding: 15px 20px;
+          background: rgba(0, 0, 0, 0.85);
+          backdrop-filter: blur(10px);
+          border-top: 1px solid rgba(255, 0, 153, 0.3);
+          display: flex;
+          gap: 10px;
+          max-width: 100%;
+        }
+        .cta-share-btn {
+          flex: 1;
+          padding: 16px;
+          border: none;
+          border-radius: 25px;
+          background: linear-gradient(135deg, #ff0099, #ff6b9d);
+          color: white;
+          font-size: 1rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+        .cta-share-btn:hover {
+          transform: scale(1.02);
+        }
+        .cta-retry-btn {
+          width: 100px;
+          padding: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 25px;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
         }
       `}</style>
         </main>
