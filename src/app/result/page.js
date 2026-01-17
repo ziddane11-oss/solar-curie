@@ -39,7 +39,7 @@ const mockResults = {
     score: 75 + Math.floor(Math.random() * 20), // 75-95%
     type: 'hot',
     verdict: 'GO',
-    verdictMessage: '게임 끝. 당장 만나자고 해.',
+    verdictMessage: '이 흐름이면 자연스럽게 다음 단계 생김',
     keywords: [
       { text: '적극적', type: 'bubble', sentiment: 'positive' },
       { text: '관심폭발', type: 'bubble', sentiment: 'positive' },
@@ -54,16 +54,16 @@ const mockResults = {
       after: '너랑 더 시간 보내고 싶어'
     },
     actionCards: [
-      { type: 'flirt', message: '혼자 먹으면 맛없는데... 우리 집으로 시킬까?', risk: 'high' },
-      { type: 'tease', message: '사주는 건 쉬운데 넌 뭐 해줄 건데?😏', risk: 'medium' },
-      { type: 'sweet', message: '마침 나도 단 거 땡겼어! 어디서 볼까?', risk: 'safe' }
+      { type: 'flirt', message: '두쫀쿠는 핑계고 그냥 더 같이 있고 싶음', risk: 'high' },
+      { type: 'tease', message: '이 분위기에서 집 가자는 건 예의 아님', risk: 'medium' },
+      { type: 'sweet', message: '오늘은 집 가면 후회하는 날임', risk: 'safe' }
     ]
   },
   cold: {
     score: 10 + Math.floor(Math.random() * 25), // 10-35%
     type: 'cold',
     verdict: 'STOP',
-    verdictMessage: '오늘 밤은 혼자 자라.',
+    verdictMessage: '지금 보내면 마이너스 시작함',
     keywords: [
       { text: '읽씹', type: 'brick', sentiment: 'negative' },
       { text: '철벽', type: 'brick', sentiment: 'negative' },
@@ -73,14 +73,14 @@ const mockResults = {
     ],
     insight: {
       persona: '독설가',
-      text: '이건 관심 없다는 거야. 1글자 답장은 "꺼져"의 다른 표현임.',
+      text: '이건 관심 없다는 거야. 1글자 답장은 \"꺼져\"의 다른 표현임.',
       before: 'ㅇㅇ ㅋ',
       after: '관심없어 그만해'
     },
     actionCards: [
-      { type: 'cold', message: '바쁜가보네~ 나중에 연락해!', risk: 'safe' },
+      { type: 'cold', message: '오늘은 여기까지인 듯~ 담에 봐!', risk: 'safe' },
       { type: 'tease', message: '답장 그렇게 하면 재미없는 사람 돼요~', risk: 'medium' },
-      { type: 'cold', message: '(읽고 씹기)', risk: 'high', locked: true }
+      { type: 'cold', message: '(읽고 조용히 빠지기)', risk: 'high', locked: true }
     ]
   }
 };
