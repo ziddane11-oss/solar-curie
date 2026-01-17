@@ -231,10 +231,12 @@ ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.
       return;
     }
 
-    // 스토리 캡션 자동 복사
+    // 스토리 캡션 + 링크 자동 복사
     const caption = buildStoryCaption(result);
+    const shareUrl = `https://solar-curie.vercel.app/result-preview?c=${result.score}&v=${result.verdict}`;
+    const clipboardText = `${caption}\n\n👉 ${shareUrl}`;
     try {
-      await navigator.clipboard.writeText(caption);
+      await navigator.clipboard.writeText(clipboardText);
     } catch { }
 
     // 저장도 공유 보상 지급
@@ -243,9 +245,9 @@ ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.
 
     if (rewarded) {
       trackShareRewardGranted(left);
-      setToastMessage(`🎁 저장 완료! +1회 📋 문구도 복사됨 - 붙여넣기만!`);
+      setToastMessage(`🎁 저장 완료! +1회 📋 링크도 복사됨!`);
     } else {
-      setToastMessage('📸 저장 완료! 📋 문구 복사됨 - 스토리에 붙여넣기!');
+      setToastMessage('📸 저장 완료! 📋 링크 복사됨 - 스티커에 붙여넣기!');
     }
     setShowToast(true);
     setTimeout(() => setShowToast(false), 4000);
@@ -325,6 +327,7 @@ ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.
               <span>talkcaddy</span>
               <span>solar-curie.vercel.app</span>
             </div>
+            <div className="story-hint">⬆ 링크는 스토리 상단에 있음</div>
           </div>
           <div className="canvas-hint-bottom">지금 답장 하나로 결과가 바뀜</div>
         </div>
@@ -437,17 +440,22 @@ ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.
         </div>
       )}
 
-      {/* 인스타 스토리 가이드 (1회만) */}
+      {/* 인스타 스토리 가이드 (1회만) - 링크 스티커 강조 */}
       {showInstaGuide && (
         <div className="insta-guide-overlay" onClick={() => setShowInstaGuide(false)}>
           <div className="insta-guide-modal" onClick={e => e.stopPropagation()}>
-            <div className="guide-title">📸 인스타 스토리 올리는 법</div>
+            <div className="guide-title">📸 스토리 저장됨!</div>
+            <div className="guide-warning">⚠️ 중요</div>
             <div className="guide-content">
-              인스타 → <b>스토리</b> → <b>갤러리</b>에서<br />
-              방금 저장한 이미지 선택하면 됨
+              인스타 스토리에 올린 뒤<br />
+              👉 상단 <b>'링크' 스티커</b> 꼭 추가해야<br />
+              친구들이 눌러서 들어옴
+            </div>
+            <div className="guide-example">
+              (스티커 문구 예: "AI 판정 보러가기")
             </div>
             <button className="guide-btn" onClick={() => setShowInstaGuide(false)}>
-              확인
+              확인했어
             </button>
           </div>
         </div>
@@ -788,13 +796,31 @@ ${typeof window !== 'undefined' ? window.location.origin : 'https://solar-curie.
           opacity: 0.8;
           line-height: 1.5;
         }
+        .guide-warning {
+          margin-top: 10px;
+          color: #ff6b6b;
+          font-weight: 700;
+          font-size: 0.95rem;
+        }
+        .guide-example {
+          margin-top: 10px;
+          font-size: 0.8rem;
+          opacity: 0.6;
+        }
+        .story-hint {
+          margin-top: 12px;
+          text-align: center;
+          font-size: 0.75rem;
+          opacity: 0.6;
+        }
         .guide-btn {
           margin-top: 20px;
           width: 100%;
           padding: 14px;
           border-radius: 12px;
-          border: 1px solid #ddd;
-          background: white;
+          border: none;
+          background: linear-gradient(135deg, #ff0099, #ff6b9d);
+          color: white;
           font-weight: 600;
           cursor: pointer;
         }

@@ -1,10 +1,13 @@
 'use client';
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { track } from "@/lib/analytics";
 
 export default function ResultPreviewPage({ searchParams }) {
   const c = Number(searchParams?.c ?? 0);
   const v = (searchParams?.v ?? "STOP").toString().toUpperCase();
+  const src = searchParams?.src ?? "unknown";
 
   const verdictText =
     v === "GO" ? "밀어붙여" : v === "CAUTION" ? "조심" : "그만해";
@@ -15,6 +18,11 @@ export default function ResultPreviewPage({ searchParams }) {
   const verdictWarn = v === "GO"
     ? "지금이 밀어붙일 타이밍임"
     : "지금 보내면 마이너스 시작";
+
+  // 페이지 뷰 트래킹
+  useEffect(() => {
+    track("result_preview_view", { src, score: c, verdict: v });
+  }, [src, c, v]);
 
   return (
     <div className="preview-container">
@@ -43,10 +51,10 @@ export default function ResultPreviewPage({ searchParams }) {
         </div>
 
         <div className="preview-buttons">
-          <Link href="/" className="btn-primary">
+          <Link href="/" className="btn-primary" onClick={() => track("cta_start_click", { from: "preview_main" })}>
             지금 답장 분석하기
           </Link>
-          <Link href="/" className="btn-secondary">
+          <Link href="/" className="btn-secondary" onClick={() => track("cta_start_click", { from: "preview_free" })}>
             무료
           </Link>
         </div>

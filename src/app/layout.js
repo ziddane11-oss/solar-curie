@@ -1,4 +1,7 @@
 import './globals.css';
+import Script from 'next/script';
+
+const GA_ID = 'G-WQ190R9RTX';
 
 export const metadata = {
   title: '톡캐디 GRAVITY | 이성은 무너지고, 본능만 남는다',
@@ -28,6 +31,19 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap"
           rel="stylesheet"
         />
+        {/* GA4 */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}', { anonymize_ip: true });
+          `}
+        </Script>
       </head>
       <body>{children}</body>
     </html>
