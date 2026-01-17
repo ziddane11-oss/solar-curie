@@ -37,11 +37,10 @@ export default function Home() {
 
   // Loading messages for credibility illusion
   const loadingMessages = [
-    "상대 반응 패턴 비교 중…",
-    `비슷한 상황 ${1000 + Math.floor(Math.random() * 500)}건 분석 중`,
-    "지금 멘트, 위험 요소 검사 중",
-    "성공 확률 계산 중…",
-    "대화 온도 측정 중…"
+    `유사 대화 ${1000 + Math.floor(Math.random() * 500)}건 비교 중…`,
+    "상대 반응 패턴 매칭 중…",
+    "실수 포인트 검사 중…",
+    "보내기 위험도 계산 중…"
   ];
 
   useEffect(() => {
@@ -273,22 +272,23 @@ export default function Home() {
       {showLimitModal && (
         <div className="limit-modal-overlay" onClick={() => setShowLimitModal(false)}>
           <div className="limit-modal" onClick={e => e.stopPropagation()}>
-            <div className="limit-emoji">😱</div>
-            <h2>오늘 무료 분석 끝!</h2>
-            <p>내일 0시에 리셋돼요</p>
-            <p className="reset-time">⏰ {getResetTime()} 후</p>
+            <div className="limit-emoji">🔒</div>
+            <h2>오늘 무료 분석 다 씀</h2>
+            <p className="limit-reason">지금은 고위험 멘트라 무료에선 숨김</p>
+            <p className="limit-offer">공유하면 +1회 바로 지급함</p>
 
             <div className="limit-options">
               <button className="share-bonus-btn" onClick={() => {
-                alert('친구에게 공유하면 +1회 추가! (공유하기 버튼 클릭)');
+                alert('공유하기 버튼 클릭하면 +1회 지급됨!');
                 setShowLimitModal(false);
               }}>
-                📤 공유하고 +1회 받기
+                공유하고 +1 받기
               </button>
               <button className="close-btn" onClick={() => setShowLimitModal(false)}>
-                닫기
+                내일 다시 하기
               </button>
             </div>
+            <p className="limit-note">하루 최대 2회까지</p>
           </div>
         </div>
       )}

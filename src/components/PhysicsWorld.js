@@ -52,11 +52,16 @@ export default function PhysicsWorld({
         const x = Math.random() * (dimensions.width - 100) + 50;
         const y = gravityType === 'anti' ? dimensions.height + 50 : -50 - (index * 80);
 
+        // Smaller sizes for mobile
+        const isMobile = dimensions.width < 768;
+        const sizeMultiplier = isMobile ? 0.6 : 1;
+
         let body;
         const style = getObjectStyle(obj.type, obj.sentiment);
 
         if (obj.type === 'bubble') {
-            body = Bodies.circle(x, y, 40 + Math.random() * 10, {
+            const radius = (25 + Math.random() * 8) * sizeMultiplier;
+            body = Bodies.circle(x, y, radius, {
                 restitution: 0.9,
                 friction: 0.01,
                 frictionAir: 0.015,
@@ -66,7 +71,9 @@ export default function PhysicsWorld({
                 objectData: { ...obj, style }
             });
         } else if (obj.type === 'brick') {
-            body = Bodies.rectangle(x, y, 110 + Math.random() * 30, 55 + Math.random() * 15, {
+            const width = (70 + Math.random() * 20) * sizeMultiplier;
+            const height = (35 + Math.random() * 10) * sizeMultiplier;
+            body = Bodies.rectangle(x, y, width, height, {
                 restitution: 0.4,
                 friction: 0.7,
                 density: 0.04,
@@ -76,14 +83,15 @@ export default function PhysicsWorld({
                 chamfer: { radius: 8 }
             });
         } else if (obj.type === 'secretBox') {
-            body = Bodies.rectangle(x, y, 75, 75, {
+            const boxSize = 50 * sizeMultiplier;
+            body = Bodies.rectangle(x, y, boxSize, boxSize, {
                 restitution: 0.6,
                 friction: 0.4,
                 density: 0.02,
                 render: { visible: false },
                 label: '?',
                 objectData: { ...obj, style },
-                chamfer: { radius: 12 }
+                chamfer: { radius: 8 * sizeMultiplier }
             });
         }
 

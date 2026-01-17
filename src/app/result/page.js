@@ -7,8 +7,13 @@ import SpeedGauge from '@/components/SpeedGauge';
 import ActionCard from '@/components/ActionCard';
 import InsightBox from '@/components/InsightBox';
 import Confetti from '@/components/Confetti';
-import { grantShareBonus, saveToHistory, hasSharedToday } from '@/lib/usageTracker';
+import LoginModal from '@/components/LoginModal';
 import NightModeBanner from '@/components/NightMode';
+import { grantShareBonus, getFreeLeft } from '@/lib/usageTracker';
+import { addHistory, createHistoryItem } from '@/lib/history';
+import { maybePromptLogin } from '@/lib/useCounter';
+import { isNightKst, shouldLockAction } from '@/lib/nightMode';
+import { trackResultView, trackActionCopy, trackLockedActionClick, trackShareSuccess, trackShareRewardGranted } from '@/lib/analytics';
 
 // Dynamic import to avoid SSR issues with Matter.js
 const PhysicsWorld = dynamic(() => import('@/components/PhysicsWorld'), {
@@ -86,6 +91,8 @@ export default function ResultPage() {
     const [toastMessage, setToastMessage] = useState('');
     const [activeTab, setActiveTab] = useState('verdict');
     const [showConfetti, setShowConfetti] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [isNight, setIsNight] = useState(false);
 
     useEffect(() => {
         // Randomly select hot or cold result for demo
@@ -105,8 +112,20 @@ export default function ResultPage() {
 
         setResult(selectedResult);
 
+        // Check night mode
+        setIsNight(isNightKst());
+
         // Save to history
-        saveToHistory(selectedResult);
+        const historyItem = createHistoryItem(selectedResult);
+        addHistory(historyItem);
+
+        // Track analytics
+        trackResultView(selectedResult.score, selectedResult.verdict);
+
+        // Maybe show login modal (3rd/6th use)
+        maybePromptLogin(() => {
+            setTimeout(() => setShowLoginModal(true), 2000);
+        });
 
         // Trigger confetti for hot results
         if (isHot) {
@@ -225,6 +244,9 @@ ${randomPrompt}
 
             {/* Night mode warning banner */}
             <NightModeBanner />
+
+            {/* Login modal for 3rd/6th use */}
+            <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
 
             {/* Content overlay */}
             <div className="result-content">

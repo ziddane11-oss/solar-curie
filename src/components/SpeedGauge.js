@@ -139,8 +139,12 @@ export default function SpeedGauge({ score = 50, verdict = 'GO' }) {
 
       {/* Credibility stats */}
       <div className="credibility-stats">
-        <span className="stat-number">1,{Math.floor(100 + Math.random() * 900)}건</span>
-        <span className="stat-text">유사 대화 분석 기준</span>
+        <span className="stat-text">유사 대화 기준 · 현재 멘트 유지 시</span>
+      </div>
+
+      {/* Strategy hint */}
+      <div className="strategy-hint">
+        {isGo ? "지금이 밀어붙일 타이밍임" : "지금은 \"밀어붙임\"보다 \"흐름 유지\"가 유리함"}
       </div>
 
       <style jsx>{`
@@ -195,9 +199,18 @@ export default function SpeedGauge({ score = 50, verdict = 'GO' }) {
           color: #ffd700;
         }
         .stat-text {
-          font-size: 0.7rem;
+          font-size: 0.75rem;
           color: rgba(255, 255, 255, 0.5);
-          margin-top: 2px;
+        }
+        .strategy-hint {
+          margin-top: 10px;
+          padding: 8px 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.7);
+          text-align: center;
+          max-width: 280px;
         }
       `}</style>
     </div>
