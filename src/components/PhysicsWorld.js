@@ -125,9 +125,9 @@ export default function PhysicsWorld({
             ctx.translate(pos.x, pos.y);
             ctx.rotate(angle);
 
-            // Glow effect
+            // Glow effect (reduced for cleaner look)
             ctx.shadowColor = style.glowColor;
-            ctx.shadowBlur = 25;
+            ctx.shadowBlur = 10;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
 
