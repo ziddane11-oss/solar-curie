@@ -83,35 +83,32 @@ function generateResult() {
   const randIdx = Math.floor(Math.random() * 5);
   const kwIdx = Math.floor(Math.random() * 3);
 
+  // chatAnalyzer에서 동적으로 액션 카드 생성
+  const { generateActionCards } = require('@/lib/chatAnalyzer');
+
   if (isHot) {
     const roast = hotRoasts[randIdx];
+    const score = 65 + Math.floor(Math.random() * 30); // 65-95%
     return {
-      score: 65 + Math.floor(Math.random() * 30), // 65-95%
+      score,
       type: 'hot',
       verdict: 'GO',
       verdictMessage: hotVerdicts[randIdx],
       keywords: hotKeywords[kwIdx].map(text => ({ text, type: 'bubble', sentiment: 'positive' })),
       insight: { persona: '카사노바', ...roast },
-      actionCards: [
-        { type: 'flirt', message: '지금 분위기 최고임. 한 단계 더 가도 됨', risk: 'high' },
-        { type: 'tease', message: '이 흐름 놓치면 후회함. 밀어붙여', risk: 'medium' },
-        { type: 'sweet', message: '오늘은 집 가면 손해 보는 날임', risk: 'safe' }
-      ]
+      actionCards: generateActionCards(score, 'hot', {})
     };
   } else {
     const roast = coldRoasts[randIdx];
+    const score = 5 + Math.floor(Math.random() * 35); // 5-40%
     return {
-      score: 5 + Math.floor(Math.random() * 35), // 5-40%
+      score,
       type: 'cold',
       verdict: 'STOP',
       verdictMessage: coldVerdicts[randIdx],
       keywords: coldKeywords[kwIdx].map(text => ({ text, type: 'brick', sentiment: 'negative' })),
       insight: { persona: '독설가', ...roast },
-      actionCards: [
-        { type: 'cold', message: '오늘은 여기까지인 듯~ 담에 봐!', risk: 'safe' },
-        { type: 'tease', message: '답장 그렇게 하면 재미없는 사람 돼요~', risk: 'medium' },
-        { type: 'cold', message: '(읽고 조용히 빠지기)', risk: 'high', locked: true }
-      ]
+      actionCards: generateActionCards(score, 'cold', {})
     };
   }
 }
