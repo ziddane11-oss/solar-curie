@@ -78,29 +78,10 @@ const coldKeywords = [
   ['귀찮음', '물음표없음', '무반응', '에너지없음', '회피'],
 ];
 
-const hotActions = [
-  [
-    { type: 'flirt', message: '두쫀쿠는 핑계고 그냥 더 같이 있고 싶음', risk: 'high' },
-    { type: 'tease', message: '이 분위기에서 집 가자는 건 예의 아님', risk: 'medium' },
-    { type: 'sweet', message: '오늘은 집 가면 후회하는 날임', risk: 'safe' }
-  ],
-  [
-    { type: 'flirt', message: '지금 헤어지면 오늘 스토리 노잼됨', risk: 'high' },
-    { type: 'tease', message: '이거 마시면 오늘 끝내기 아까움', risk: 'medium' },
-    { type: 'sweet', message: '오늘은 집 가면 손해임', risk: 'safe' }
-  ],
-  [
-    { type: 'flirt', message: '이 정도면 아직 2차임', risk: 'high' },
-    { type: 'tease', message: '지금 들어가면 오늘 기억 흐려짐', risk: 'medium' },
-    { type: 'sweet', message: '이렇게 웃고 헤어지긴 아까움', risk: 'safe' }
-  ],
-];
-
 function generateResult() {
   const isHot = Math.random() > 0.35;
   const randIdx = Math.floor(Math.random() * 5);
   const kwIdx = Math.floor(Math.random() * 3);
-  const actIdx = Math.floor(Math.random() * 3);
 
   if (isHot) {
     const roast = hotRoasts[randIdx];
@@ -111,7 +92,11 @@ function generateResult() {
       verdictMessage: hotVerdicts[randIdx],
       keywords: hotKeywords[kwIdx].map(text => ({ text, type: 'bubble', sentiment: 'positive' })),
       insight: { persona: '카사노바', ...roast },
-      actionCards: hotActions[actIdx]
+      actionCards: [
+        { type: 'flirt', message: '지금 분위기 최고임. 한 단계 더 가도 됨', risk: 'high' },
+        { type: 'tease', message: '이 흐름 놓치면 후회함. 밀어붙여', risk: 'medium' },
+        { type: 'sweet', message: '오늘은 집 가면 손해 보는 날임', risk: 'safe' }
+      ]
     };
   } else {
     const roast = coldRoasts[randIdx];

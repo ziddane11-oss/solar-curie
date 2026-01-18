@@ -413,16 +413,60 @@ function generateKeywords(signals, type) {
  * 액션 카드 생성
  */
 function generateActionCards(score, type, signals) {
+    // Hot 액션 카드 풀 (리스크별)
+    const hotHighRisk = [
+        '두쫀쿠는 핑계고 그냥 더 같이 있고 싶음',
+        '지금 분위기 최고임. 한 단계 더 가도 됨',
+        '이 정도면 아직 2차임',
+        '지금 헤어지면 오늘 스토리 노잼됨'
+    ];
+
+    const hotMediumRisk = [
+        '이 분위기에서 집 가자는 건 예의 아님',
+        '이 흐름 놓치면 후회함. 밀어붙여',
+        '이거 마시면 오늘 끝내기 아까움',
+        '지금 들어가면 오늘 기억 흐려짐'
+    ];
+
+    const hotSafeRisk = [
+        '오늘은 집 가면 후회하는 날임',
+        '오늘은 집 가면 손해 보는 날임',
+        '오늘은 집 가면 손해임',
+        '이렇게 웃고 헤어지긴 아까움'
+    ];
+
+    // Cold 액션 카드 풀
+    const coldSafeRisk = [
+        '오늘은 여기까지~ 다음에 봐!',
+        '오늘은 여기까지인 듯~ 담에 봐!',
+        '지금은 쿨하게 빠지는 게 나음',
+        '내일 생각하면서 자연스럽게 마무리'
+    ];
+
+    const coldMediumRisk = [
+        '읽씹은 관심 없다는 뜻임. 쿨하게 빠져',
+        '답장 그렇게 하면 재미없는 사람 돼요~',
+        '이런 톡은 나중에 하는 게 나음',
+        '지금 더 보내면 부담만 줌'
+    ];
+
     if (type === 'hot') {
+        const randHigh = Math.floor(Math.random() * hotHighRisk.length);
+        const randMed = Math.floor(Math.random() * hotMediumRisk.length);
+        const randSafe = Math.floor(Math.random() * hotSafeRisk.length);
+
         return [
-            { type: 'flirt', message: '지금 분위기 최고임. 한 단계 더 가도 됨', risk: 'high' },
-            { type: 'tease', message: '이 흐름 놓치면 후회함. 밀어붙여', risk: 'medium' },
-            { type: 'sweet', message: '오늘은 집 가면 손해 보는 날임', risk: 'safe' }
+            { type: 'flirt', message: hotHighRisk[randHigh], risk: 'high' },
+            { type: 'tease', message: hotMediumRisk[randMed], risk: 'medium' },
+            { type: 'sweet', message: hotSafeRisk[randSafe], risk: 'safe' }
         ];
     } else {
+        const randSafe = Math.floor(Math.random() * coldSafeRisk.length);
+        const randMed = Math.floor(Math.random() * coldMediumRisk.length);
+
         return [
-            { type: 'cold', message: '오늘은 여기까지~ 다음에 봐!', risk: 'safe' },
-            { type: 'tease', message: '읽씹은 관심 없다는 뜻임. 쿨하게 빠져', risk: 'medium' },
+            { type: 'cold', message: coldSafeRisk[randSafe], risk: 'safe' },
+            { type: 'tease', message: coldMediumRisk[randMed], risk: 'medium' },
             { type: 'cold', message: '(조용히 읽고 나가기)', risk: 'high', locked: true }
         ];
     }
