@@ -166,31 +166,73 @@ function detectPatterns(parsed) {
 
     if (signals.emojiCount >= 2) signals.emojiScore += 5;
 
-    // === 3. 감정 키워드 ===
-    const strongEmotion = ['보고싶어', '사랑해', '좋아해'];
-    const mediumEmotion = ['좋아', '재밌어', '행복해', '기뻐', '설레'];
-    const weakEmotion = ['괜찮아', '맞아', '그래'];
+    // === 3. 감정 키워드 (레벨별 가중치 시스템) ===
+    // 각 카테고리별로 5단계 레벨 분류
+    // 가중치: Level 1=1점, Level 2=2점, Level 3=4점, Level 4=8점, Level 5=15점
 
-    strongEmotion.forEach(word => {
-        if (otherText.includes(word)) {
-            signals.emotionKeywords.push(word);
-            signals.emotionScore += 30;
+    const emotionKeywords = {
+        // 긍정적 감정 (Positive)
+        positive: {
+            level1: { words: ['좋아', '괜찮아', '응', '알겠어'], weight: 1 },
+            level2: { words: ['좋아요', '감사', '고마워', '멋져'], weight: 2 },
+            level3: { words: ['정말 좋아', '행복해', '기뻐', '즐거워'], weight: 4 },
+            level4: { words: ['너무 좋아', '정말 행복해', '최고야', '완벽해'], weight: 8 },
+            level5: { words: ['진짜 최고', '완전 행복해', '사랑해', '대박'], weight: 15 }
+        },
+        // 부정적 감정 (Negative)
+        negative: {
+            level1: { words: ['별로', '글쎄', '아니야'], weight: -1 },
+            level2: { words: ['싫어', '안 좋아', '별로야'], weight: -2 },
+            level3: { words: ['짜증나', '불편해', '안 좋아요'], weight: -4 },
+            level4: { words: ['화나', '정말 싫어', '너무 싫어'], weight: -8 },
+            level5: { words: ['미쳤어', '최악이야', '진짜 화나'], weight: -15 }
+        },
+        // 불안/걱정 (Anxious)
+        anxious: {
+            level1: { words: ['조금 걱정돼'], weight: -1 },
+            level2: { words: ['불안해', '걱정돼'], weight: -2 },
+            level3: { words: ['많이 걱정돼', '불안해요'], weight: -4 },
+            level4: { words: ['정말 불안해', '너무 걱정돼'], weight: -8 },
+            level5: { words: ['진짜 불안해', '완전 걱정돼'], weight: -15 }
+        },
+        // 슬픔 (Sad)
+        sad: {
+            level1: { words: ['아쉬워'], weight: -1 },
+            level2: { words: ['슬퍼', '우울해'], weight: -2 },
+            level3: { words: ['많이 슬퍼', '속상해'], weight: -4 },
+            level4: { words: ['정말 슬퍼', '너무 우울해'], weight: -8 },
+            level5: { words: ['진짜 슬퍼', '완전 우울해'], weight: -15 }
+        },
+        // 중립/무관심 (Neutral)
+        neutral: {
+            level1: { words: ['그냥', '뭐', '그래'], weight: 0 },
+            level2: { words: ['그런가', '상관없어'], weight: 0 },
+            level3: { words: ['상관 안 해', '어쨌든'], weight: -1 }
+        },
+        // 놀람/흥미 (Surprised/Interested)
+        interested: {
+            level1: { words: ['오', '헐'], weight: 2 },
+            level2: { words: ['대박', '정말?', '진짜?'], weight: 4 },
+            level3: { words: ['와', '놀라워', '믿을 수 없어'], weight: 6 }
         }
+    };
+
+    // 감정 키워드 감지 및 점수 계산
+    Object.keys(emotionKeywords).forEach(category => {
+        const levels = emotionKeywords[category];
+
+        Object.keys(levels).forEach(level => {
+            const { words, weight } = levels[level];
+
+            words.forEach(word => {
+                if (otherText.includes(word)) {
+                    signals.emotionKeywords.push({ word, category, level, weight });
+                    signals.emotionScore += weight;
+                }
+            });
+        });
     });
 
-    mediumEmotion.forEach(word => {
-        if (otherText.includes(word)) {
-            signals.emotionKeywords.push(word);
-            signals.emotionScore += 20;
-        }
-    });
-
-    weakEmotion.forEach(word => {
-        if (otherText.includes(word)) {
-            signals.emotionKeywords.push(word);
-            signals.emotionScore += 10;
-        }
-    });
 
     // === 4. 질문 패턴 ===
     const questionMarks = (otherText.match(/\?|？/g) || []).length;
