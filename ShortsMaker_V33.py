@@ -159,46 +159,45 @@ def strip_emojis(text):
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 
-# 🔥 [신규] 한국어 자연스러운 줄바꿈 함수
-def smart_ko_wrap(text, max_chars=14):
-    """한국어 어절/구두점 기준 줄바꿈 - 연결어미로 시작하는 줄 방지"""
+# 🔥 [신규] 한국어 자연스러운 줄바꿈 함수 - 문장 단위 분할
+def smart_ko_wrap(text, max_chars=20):
+    """문장 단위로 끊고, 너무 길면 공백에서 한 번만 분할"""
     text = re.sub(r"\s+", " ", text).strip()
     if not text:
         return []
-
-    tokens = re.split(r"(\s+|[,.!?…，。！？])", text)  # 구두점도 토큰으로 유지
-    lines, cur = [], ""
-
-    def flush():
-        nonlocal cur
-        if cur.strip():
-            lines.append(cur.strip())
-        cur = ""
-
-    for tok in tokens:
-        if tok is None or tok == "":
-            continue
-        # 토큰을 붙였을 때 길이 계산
-        candidate = (cur + tok).strip()
-
-        # 너무 길면 끊기
-        if len(candidate) > max_chars and cur.strip():
-            flush()
-            cur = tok.strip()
+    
+    # 1단계: 문장 단위로 분할 (마침표, 물음표, 느낌표)
+    sentences = re.split(r'([.!?。！？])', text)
+    
+    # 구두점을 문장에 다시 붙이기
+    merged = []
+    for i in range(0, len(sentences), 2):
+        sent = sentences[i].strip()
+        if i + 1 < len(sentences):
+            sent += sentences[i + 1]
+        if sent.strip():
+            merged.append(sent.strip())
+    
+    # 문장이 없으면 전체 텍스트를 하나로
+    if not merged:
+        merged = [text]
+    
+    # 2단계: 너무 긴 문장만 공백에서 한 번 분할
+    lines = []
+    for sent in merged:
+        if len(sent) <= max_chars:
+            lines.append(sent)
         else:
-            cur = (cur + tok)
-
-    flush()
-
-    # 보기 싫은 시작 패턴 정리("고," "그리고" 같은 게 줄 첫머리에 오면 앞줄로 붙이기)
-    bad_starts = ("고", "고,", "나고", "나고,", "는데", "근데", "그리고", "그래서", "하지만", "또", "이런", "그런")
-    fixed = []
-    for line in lines:
-        if fixed and any(line.startswith(bs) for bs in bad_starts) and len(fixed[-1]) + 1 + len(line) <= max_chars + 4:
-            fixed[-1] = fixed[-1] + " " + line
-        else:
-            fixed.append(line)
-    return fixed
+            # 중간 공백에서 분할
+            words = sent.split()
+            mid = len(words) // 2
+            if mid > 0:
+                lines.append(" ".join(words[:mid]))
+                lines.append(" ".join(words[mid:]))
+            else:
+                lines.append(sent)
+    
+    return lines
 
 def generate_viral_content(api_key, topic, language):
     print(f"[Gemini] 기획안 + SEO 데이터 생성 중 ({language})...")
