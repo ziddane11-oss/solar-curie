@@ -48,14 +48,14 @@ BORDER = "#1F2A3A"
 SUCCESS = "#2CC985"
 DANGER = "#FF3B5C"
 
-# 폰트 (Malgun Gothic 통일)
-TITLE_FONT = ("Malgun Gothic", 26, "bold")
-H2_FONT = ("Malgun Gothic", 15, "bold")
-BODY_FONT = ("Malgun Gothic", 13)
-SMALL_FONT = ("Malgun Gothic", 12)
-FONT_BOLD = ("Malgun Gothic", 16, "bold")
-FONT_NORMAL = ("Malgun Gothic", 14)
-FONT_SMALL = ("Malgun Gothic", 12)
+# 폰트 (Malgun Gothic 통일) - 크기 증가
+TITLE_FONT = ("Malgun Gothic", 32, "bold")
+H2_FONT = ("Malgun Gothic", 18, "bold")
+BODY_FONT = ("Malgun Gothic", 15)
+SMALL_FONT = ("Malgun Gothic", 14)
+FONT_BOLD = ("Malgun Gothic", 18, "bold")
+FONT_NORMAL = ("Malgun Gothic", 16)
+FONT_SMALL = ("Malgun Gothic", 14)
 R = 20  # corner_radius
 
 FONT_PATH = "C:/Windows/Fonts/malgunbd.ttf"
@@ -235,8 +235,9 @@ def generate_images(api_key, prompts):
         try:
             print(f"   └─ 이미지 {i+1} 생성 요청...")
             response = client.images.generate(
-                model="dall-e-3", prompt=f"high quality, cinematic, vertical composition, {clean_p}",
-                size="1024x1792", quality="standard", n=1
+                model="dall-e-3", 
+                prompt=f"Ultra modern, sleek minimalist design, vibrant colors, 8K quality, professional photography, trending on Artstation, {clean_p}",
+                size="1024x1792", quality="hd", n=1
             )
             image_url = response.data[0].url
             img_data = requests.get(image_url).content
@@ -282,12 +283,12 @@ def create_caption_clip(text, duration, text_color):
     draw = ImageDraw.Draw(img)
     
     try:
-        font = ImageFont.truetype(FONT_PATH, 70)
+        font = ImageFont.truetype(FONT_PATH, 90)  # 70→90 크기 증가
     except:
         font = ImageFont.load_default()
     
-    lines = textwrap.wrap(text, width=14)
-    y = int(h * 0.75) - ((len(lines) * 85) // 2)
+    lines = textwrap.wrap(text, width=12)  # 14→12로 줄여서 더 크게
+    y = int(h * 0.75) - ((len(lines) * 105) // 2)  # 줄간격 85→105
     
     for line in lines:
         bbox = draw.textbbox((0, 0), line, font=font)
@@ -301,7 +302,7 @@ def create_caption_clip(text, duration, text_color):
         except:
             r, g, b = 255, 215, 0  # 기본 황금색
         draw.text((x, y), line, font=font, fill=(r, g, b, 255))
-        y += 85
+        y += 105  # 줄간격 85→105
     
     # RGBA를 RGB + Alpha mask로 분리
     arr = np.array(img)
@@ -469,7 +470,7 @@ def make_video(voice_path, bgm_path, img_paths, script, hook_title, out_name, te
 class KnowledgeMakerUltra(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Knowledge Maker V30")
+        self.title("Shorts Maker V33")
         self.geometry("700x850")
         self.configure(fg_color=BG)
         cfg = load_config()
@@ -483,8 +484,8 @@ class KnowledgeMakerUltra(ctk.CTk):
         # 1. 헤더 (네온-미니멀)
         header = ctk.CTkFrame(self.main_scroll, fg_color="transparent")
         header.pack(fill="x", padx=20, pady=(20, 10))
-        ctk.CTkLabel(header, text="Knowledge Maker", font=TITLE_FONT, text_color=TEXT).pack(side="left")
-        ctk.CTkLabel(header, text="v3.0", font=SMALL_FONT, text_color=NEON).pack(side="left", padx=10)
+        ctk.CTkLabel(header, text="Shorts Maker", font=TITLE_FONT, text_color=TEXT).pack(side="left")
+        ctk.CTkLabel(header, text="V33", font=H2_FONT, text_color=NEON).pack(side="left", padx=10)
 
         # 2. API 카드
         f_conf = ctk.CTkFrame(self.main_scroll, fg_color=CARD, corner_radius=R, border_width=1, border_color=BORDER)
