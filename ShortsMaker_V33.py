@@ -159,6 +159,47 @@ def strip_emojis(text):
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 
+# 🔥 [신규] 한국어 자연스러운 줄바꿈 함수
+def smart_ko_wrap(text, max_chars=14):
+    """한국어 어절/구두점 기준 줄바꿈 - 연결어미로 시작하는 줄 방지"""
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return []
+
+    tokens = re.split(r"(\s+|[,.!?…，。！？])", text)  # 구두점도 토큰으로 유지
+    lines, cur = [], ""
+
+    def flush():
+        nonlocal cur
+        if cur.strip():
+            lines.append(cur.strip())
+        cur = ""
+
+    for tok in tokens:
+        if tok is None or tok == "":
+            continue
+        # 토큰을 붙였을 때 길이 계산
+        candidate = (cur + tok).strip()
+
+        # 너무 길면 끊기
+        if len(candidate) > max_chars and cur.strip():
+            flush()
+            cur = tok.strip()
+        else:
+            cur = (cur + tok)
+
+    flush()
+
+    # 보기 싫은 시작 패턴 정리("고," "그리고" 같은 게 줄 첫머리에 오면 앞줄로 붙이기)
+    bad_starts = ("고", "고,", "나고", "나고,", "는데", "근데", "그리고", "그래서", "하지만", "또", "이런", "그런")
+    fixed = []
+    for line in lines:
+        if fixed and any(line.startswith(bs) for bs in bad_starts) and len(fixed[-1]) + 1 + len(line) <= max_chars + 4:
+            fixed[-1] = fixed[-1] + " " + line
+        else:
+            fixed.append(line)
+    return fixed
+
 def generate_viral_content(api_key, topic, language):
     print(f"[Gemini] 기획안 + SEO 데이터 생성 중 ({language})...")
     client = genai.Client(api_key=api_key)
@@ -168,9 +209,17 @@ def generate_viral_content(api_key, topic, language):
     Topic: {topic}. Target Language: **{language}**.
     
     1. Create a "Hook Title" (3-5 words, clickbait).
-    2. Create a script (Casual tone, 40-50 secs).
+    2. Create a script (Casual tone, 40-50 secs, subtitle-ready).
     3. Create 6 Image Prompts (English only, cinematic style).
     4. **Create YouTube Metadata (SEO):** 3 Titles, Description, 15 Hashtags.
+    
+    [Script Rules - IMPORTANT]
+    - Output as subtitle-ready lines with natural breaks.
+    - Each line: 8–14 Korean characters (one breath per line).
+    - Put a newline after each subtitle line.
+    - Do NOT start a line with connectors like "고,", "나고,", "근데", "그래서".
+    - Break on spaces or after punctuation only.
+    - Avoid excessive commas.
     
     - DO NOT use emojis, emoticons, or decorative symbols.
     - Use plain text only. No special characters except basic punctuation.
@@ -287,7 +336,7 @@ def create_caption_clip(text, duration, text_color):
     except:
         font = ImageFont.load_default()
     
-    lines = textwrap.wrap(text, width=12)  # 14→12로 줄여서 더 크게
+    lines = smart_ko_wrap(text, max_chars=14)  # 한국어 어절 기준 줄바꿈
     y = int(h * 0.75) - ((len(lines) * 105) // 2)  # 줄간격 85→105
     
     for line in lines:
