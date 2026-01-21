@@ -67,10 +67,11 @@ if not os.path.exists(FONT_PATH):
 CONFIG_FILE = "config_ultra.json"
 
 VOICE_OPTIONS = {
-    "차분한 남성 (Antoni)": "ErXwobaYiN019PkySvjV",
-    "밝은 여성 (Rachel)": "21m00Tcm4TlvDq8ikWAM",
-    "굵은 남성 (Clyde)": "2EiwWnXFnvU5JabPnv8n",
-    "할머니 (Mimi)": "zrHiDhphv9ZnVXBqCLjz"
+    "에너지틱 남성 (Josh)": "TxGEqnHWrfWFTfGW9XjX",
+    "감성적 여성 (Bella)": "EXAVITQu4vr4xnSDxMaL",
+    "따뜻한 남성 (Adam)": "pNInz6obpgDQGcFmaJgB",
+    "밝은 여성 (Elli)": "MF3mGyEYCl7XYWbV9V6O",
+    "자연스러운 중성 (Sam)": "yoZ06aMxZJJ28mfd3POQ"
 }
 
 COLOR_OPTIONS = {
