@@ -1,24 +1,61 @@
+import { log } from '@/lib/logger';
+
 const FORBIDDEN_PATTERNS = [
+  // 단정/확신 표현
   '조작했다',
   '조작한 것으로 보인다',
+  '조작한 것이다',
+  '때문에 확실',
+  '임이 드러났다',
+  '것으로 확인됐다',
+  '것으로 밝혀졌다',
+  '확실하다',
+  '분명하다',
+  // 의도/범죄 단정
+  '의도적으로',
+  '사익을 위해',
+  '고의로',
+  '음모',
+  '공모했다',
+  '공모한',
+  // 인신공격/명예훼손
   '내부자',
   '비리',
   '부패',
-  '때문에 확실',
-  '임이 드러났다',
-  '사익을 위해',
-  '의도적으로',
+  '범죄자',
+  '사기꾼',
+  '먹튀',
+  // 사생활 추측
+  '사생활',
+  '불륜',
+  '이혼',
+  '가족 문제',
+];
+
+// 영어 금칙어 (AI가 영어로 생성할 경우 대비)
+const FORBIDDEN_PATTERNS_EN = [
+  'definitely',
+  'certainly committed',
+  'clearly guilty',
+  'obviously corrupt',
+  'conspiracy to',
+  'criminal intent',
+  'deliberately manipulated',
+  'insider trading',
+  'fraud committed by',
 ];
 
 const SYSTEM_PROMPT = `You are a global economic/tech news analyst. Your task is to provide insightful analysis of news articles.
 
-RULES:
+STRICT RULES:
 - Strictly separate FACTS from INTERPRETATION
 - NEVER assert intent, crime, or collusion ("they manipulated", "they intentionally")
 - NEVER speculate about personal private matters
 - Present at least 2 SCENARIOS
-- Maintain "could be" / "might be" tone for all judgments
+- Maintain "could be" / "might be" tone for ALL judgments — no exceptions
 - Always include the fixed disclaimer at the end
+- Do NOT use definitive language like "확실", "분명", "드러났다"
+- Use hedging: "~일 수 있다", "~가능성이 있다", "~로 보인다" (but not "~인 것으로 보인다")
 
 OUTPUT FORMAT (use exactly these section headers):
 
@@ -49,18 +86,45 @@ export interface RiskFlags {
 }
 
 export function checkForbiddenPatterns(text: string): RiskFlags {
-  const foundWords = FORBIDDEN_PATTERNS.filter((pattern) =>
+  const lowerText = text.toLowerCase();
+
+  const foundKo = FORBIDDEN_PATTERNS.filter((pattern) =>
     text.includes(pattern)
   );
+  const foundEn = FORBIDDEN_PATTERNS_EN.filter((pattern) =>
+    lowerText.includes(pattern)
+  );
+  const foundWords = [...foundKo, ...foundEn];
 
   return {
     defamation: foundWords.some((w) =>
-      ['조작했다', '조작한 것으로 보인다', '비리', '부패'].includes(w)
+      [
+        '조작했다',
+        '조작한 것으로 보인다',
+        '조작한 것이다',
+        '비리',
+        '부패',
+        '범죄자',
+        '사기꾼',
+        '먹튀',
+      ].includes(w)
     ),
     intent_assertion: foundWords.some((w) =>
-      ['의도적으로', '사익을 위해'].includes(w)
+      [
+        '의도적으로',
+        '사익을 위해',
+        '고의로',
+        '음모',
+        '공모했다',
+        '공모한',
+        'conspiracy to',
+        'criminal intent',
+        'deliberately manipulated',
+      ].includes(w)
     ),
-    privacy_violation: false,
+    privacy_violation: foundWords.some((w) =>
+      ['사생활', '불륜', '이혼', '가족 문제'].includes(w)
+    ),
     forbidden_words: foundWords,
   };
 }
@@ -77,14 +141,14 @@ export function hasRiskFlags(flags: RiskFlags): boolean {
 export function buildAnalysisPrompt(
   articleTitle: string,
   articleSummary: string | null,
-  toneLevel: number = 2
+  toneLevel: number = 1
 ): { system: string; user: string } {
   const toneInstruction =
     toneLevel === 1
-      ? 'Use a conservative, cautious tone. Stick closely to facts.'
-      : toneLevel === 3
-        ? 'Use a bold, provocative tone while still following the rules.'
-        : 'Use a balanced, engaging tone.';
+      ? 'Use a conservative, cautious tone. Stick closely to facts. Minimize speculation.'
+      : toneLevel === 2
+        ? 'Use a balanced, engaging tone.'
+        : 'Use a bold, provocative tone while still following the rules.';
 
   return {
     system: SYSTEM_PROMPT,
@@ -99,10 +163,13 @@ Provide your analysis in the specified format. Write primarily in Korean, but ke
   };
 }
 
+const MAX_RETRIES = 2;
+
 export async function generateAnalysis(
   articleTitle: string,
   articleSummary: string | null,
-  toneLevel: number = 2
+  toneLevel: number = 1,
+  _retryCount: number = 0
 ): Promise<{ text: string; riskFlags: RiskFlags }> {
   const { system, user } = buildAnalysisPrompt(
     articleTitle,
@@ -134,6 +201,10 @@ export async function generateAnalysis(
 
   if (!response.ok) {
     const error = await response.text();
+    await log('analysis_generation', 'error', {
+      article: articleTitle,
+      error,
+    });
     throw new Error(`OpenAI API error: ${error}`);
   }
 
@@ -142,10 +213,31 @@ export async function generateAnalysis(
 
   const riskFlags = checkForbiddenPatterns(text);
 
-  // If risk flags found and tone > 1, suggest regeneration at lower tone
-  if (hasRiskFlags(riskFlags) && toneLevel > 1) {
-    return generateAnalysis(articleTitle, articleSummary, toneLevel - 1);
+  if (hasRiskFlags(riskFlags)) {
+    await log('analysis_risk', 'warn', {
+      article: articleTitle,
+      toneLevel,
+      riskFlags,
+      retryCount: _retryCount,
+    });
+
+    // 톤 낮춰서 재시도 (최대 MAX_RETRIES번)
+    if (toneLevel > 1 && _retryCount < MAX_RETRIES) {
+      return generateAnalysis(
+        articleTitle,
+        articleSummary,
+        toneLevel - 1,
+        _retryCount + 1
+      );
+    }
   }
+
+  await log('analysis_generation', 'info', {
+    article: articleTitle,
+    toneLevel,
+    hasRisk: hasRiskFlags(riskFlags),
+    riskWords: riskFlags.forbidden_words,
+  });
 
   return { text, riskFlags };
 }

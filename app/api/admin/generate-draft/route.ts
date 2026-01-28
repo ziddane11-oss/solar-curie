@@ -28,11 +28,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Article not found' }, { status: 404 });
   }
 
-  // Generate analysis
+  // Generate analysis (tone_level=1: conservative default)
   const { text, riskFlags } = await generateAnalysis(
     article.title,
     article.summary_fact,
-    2
+    1
   );
 
   // Save as draft
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       article_id,
       status: 'draft',
       analysis_text: text,
-      tone_level: 2,
+      tone_level: 1,
       risk_flags: riskFlags,
     })
     .select()
