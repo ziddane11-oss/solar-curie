@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +32,12 @@ export default function ArticleDetailPage() {
   const [article, setArticle] = useState<Article | null>(null);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? sessionStorage.getItem('adminToken') : null;
+    if (token) setIsAdmin(true);
+  }, []);
 
   useEffect(() => {
     async function loadArticle() {
@@ -89,14 +96,23 @@ export default function ArticleDetailPage() {
         <h1 className="text-2xl md:text-3xl font-bold mb-2">
           {article.title}
         </h1>
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-primary hover:underline"
-        >
-          원문 보기 →
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:underline"
+          >
+            원문 보기 →
+          </a>
+          {isAdmin && analysis && (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/admin/edit/${analysis.id}`}>
+                수정하기
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {sections ? (
