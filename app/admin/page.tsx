@@ -31,6 +31,8 @@ export default function AdminPage() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [ingesting, setIngesting] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [stats, setStats] = useState<Stats | null>(null);
 
@@ -48,6 +50,7 @@ export default function AdminPage() {
         const data = await res.json();
         setArticles(data.articles || []);
       } else if (res.status === 401) {
+        sessionStorage.removeItem('adminToken');
         setAuthenticated(false);
       }
     } finally {
@@ -109,10 +112,28 @@ export default function AdminPage() {
     }
   }
 
-  function handleAuth(e: React.FormEvent) {
+  async function handleAuth(e: React.FormEvent) {
     e.preventDefault();
-    sessionStorage.setItem('adminToken', adminToken);
-    setAuthenticated(true);
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      const res = await fetch('/api/admin/stats', {
+        headers: { 'x-admin-token': adminToken },
+      });
+      if (res.ok) {
+        sessionStorage.setItem('adminToken', adminToken);
+        setAuthenticated(true);
+      } else if (res.status === 401) {
+        setAuthError('토큰이 올바르지 않습니다.');
+        sessionStorage.removeItem('adminToken');
+      } else {
+        setAuthError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    } catch {
+      setAuthError('서버에 연결할 수 없습니다. 네트워크를 확인해주세요.');
+    } finally {
+      setAuthLoading(false);
+    }
   }
 
   if (!authenticated) {
@@ -126,8 +147,11 @@ export default function AdminPage() {
             value={adminToken}
             onChange={(e) => setAdminToken(e.target.value)}
           />
-          <Button type="submit" className="w-full">
-            접속
+          {authError && (
+            <p className="text-sm text-red-600">{authError}</p>
+          )}
+          <Button type="submit" className="w-full" disabled={authLoading || !adminToken}>
+            {authLoading ? '확인 중...' : '접속'}
           </Button>
         </form>
       </div>
