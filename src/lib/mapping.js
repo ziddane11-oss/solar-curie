@@ -79,16 +79,49 @@ export function applyTransform(value, transform) {
 }
 
 /**
+ * Compute months between two date strings.
+ */
+export function computeMonths(start, end) {
+  if (!start || !end) return 0;
+  const s = new Date(start);
+  const e = new Date(end);
+  if (isNaN(s) || isNaN(e)) return 0;
+  return Math.max(0, (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()));
+}
+
+/**
  * Build a merged data context from profile + cover letter.
+ * Flattens teacher_pack, maps cover letter sections, and enriches career entries.
  */
 export function buildDataContext(profile, coverLetter) {
   const ctx = { ...profile };
 
+  // Flatten teacher_pack fields to top level for template compatibility
+  if (profile.teacher_pack) {
+    ctx.teacher_cert = profile.teacher_pack.teacher_cert;
+    ctx.nice_pool = profile.teacher_pack.nice_pool;
+    ctx.school_target = profile.teacher_pack.school_target;
+    if (!ctx.other_certs?.length) {
+      ctx.other_certs = profile.teacher_pack.other_certs;
+    }
+  }
+
+  // Map cover letter sections to cover_letter.<id>
   if (coverLetter?.sections) {
     ctx.cover_letter = {};
     for (const section of coverLetter.sections) {
       ctx.cover_letter[section.id] = section.body;
     }
+  }
+
+  // Sort career by start_date descending and compute total_months
+  if (ctx.career?.length) {
+    ctx.career = ctx.career
+      .map((c) => ({
+        ...c,
+        total_months: c.total_months || computeMonths(c.start_date, c.end_date),
+      }))
+      .sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
   }
 
   return ctx;
