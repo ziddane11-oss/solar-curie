@@ -1,0 +1,11 @@
+{
+  "template_id": "haesung_2026",
+  "template_name": "해성고 2026 지원서",
+  "rules": [
+    { "type": "find_replace", "find": "<<NAME>>", "value_path": "person.name" },
+    { "type": "find_replace", "find": "<<PHONE>>", "value_path": "person.phone" },
+    { "type": "find_replace", "find": "<<EMAIL>>", "value_path": "person.email" },
+    { "type": "find_replace", "find": "<<EDU1>>", "value_path": "education[0].school" },
+    { "type": "find_replace", "find": "<<CAREER_TEXT>>", "value_path": "career_text_compiled" }
+  ]
+}
