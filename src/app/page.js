@@ -1,106 +1,178 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import TabNav from '@/components/ui/TabNav';
+import ProfileBar from '@/components/ui/ProfileBar';
+import PrivacyNotice from '@/components/ui/PrivacyNotice';
 import PersonalInfoForm from '@/components/forms/PersonalInfoForm';
-import CertificationForm from '@/components/forms/CertificationForm';
 import EducationForm from '@/components/forms/EducationForm';
 import CareerForm from '@/components/forms/CareerForm';
 import MilitaryForm from '@/components/forms/MilitaryForm';
 import AdditionalForm from '@/components/forms/AdditionalForm';
+import TeacherPackForm from '@/components/forms/TeacherPackForm';
 import CoverLetterForm from '@/components/forms/CoverLetterForm';
 import GeneratePanel from '@/components/forms/GeneratePanel';
+import { emptyProfile } from '@/types/profile';
+import { emptyCoverLetter } from '@/types/cover-letter';
+import {
+  loadActiveProfile,
+  saveProfile,
+  createProfile,
+  renameProfile,
+  duplicateProfile,
+  deleteProfile,
+  getAllProfiles,
+  setActiveProfileId,
+  loadCoverLetter,
+  saveCoverLetter,
+  resetAllData,
+  debouncedSave,
+} from '@/lib/storage';
+import { exportProfileJSON, importProfileJSON, openFilePicker } from '@/lib/io';
+import { useAuth, isFeatureEnabled } from '@/lib/auth';
 import styles from './page.module.css';
 
-const EMPTY_PROFILE = {
-  version: 2,
-  personal: {
-    name: '', name_hanja: '', birth: '', gender: '',
-    phone: '', phone_secondary: '', email: '',
-    address: '', address_detail: '', postal_code: '',
-  },
-  teacher_cert: [{ cert_type: '', cert_subject: '', cert_number: '', cert_date: '', issuer: '' }],
-  other_certs: [],
-  education: [{ school: '', major: '', degree: '', status: '', start_date: '', end_date: '', thesis_title: '' }],
-  career: [{ institution: '', position: '', subject: '', start_date: '', end_date: '', is_contract: true, total_months: 0, notes: '' }],
-  military: { status: '', branch: '', rank: '', start_date: '', end_date: '' },
-  additional: { disability: '', veteran: '', multi_cultural: false, custom_fields: [] },
-};
-
-const EMPTY_COVER_LETTER = {
-  version: 1,
-  sections: [
-    { id: 'self_intro', title: '자기소개', body: '', max_length: 1000 },
-    { id: 'motivation', title: '지원동기', body: '', max_length: 1000 },
-    { id: 'philosophy', title: '교육관', body: '', max_length: 1000 },
-    { id: 'future_plan', title: '향후 계획', body: '', max_length: 500 },
-  ],
-};
-
 const TABS = [
-  { id: 'personal', label: '인적사항' },
-  { id: 'certs', label: '자격증' },
-  { id: 'education', label: '학력' },
-  { id: 'career', label: '경력' },
-  { id: 'military', label: '병역/기타' },
+  { id: 'basic', label: '기본정보' },
+  { id: 'teacher', label: '교사용 확장팩' },
   { id: 'cover_letter', label: '자기소개서' },
-  { id: 'generate', label: 'PDF 생성' },
+  { id: 'output', label: '출력·템플릿' },
 ];
 
 export default function Home() {
-  const [profile, setProfile] = useState(EMPTY_PROFILE);
-  const [coverLetter, setCoverLetter] = useState(EMPTY_COVER_LETTER);
+  const [profile, setProfile] = useState(emptyProfile);
+  const [coverLetter, setCoverLetter] = useState(emptyCoverLetter);
+  const [profiles, setProfiles] = useState([]);
+  const [activeId, setActiveId] = useState(null);
   const [templates, setTemplates] = useState([]);
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState('basic');
   const [status, setStatus] = useState('');
   const [log, setLog] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
+  const auth = useAuth();
+
+  // Load from LocalStorage on mount
   useEffect(() => {
-    const load = async () => {
-      const [profileRes, coverLetterRes, templatesRes] = await Promise.all([
-        fetch('/api/profile'),
-        fetch('/api/cover-letter'),
-        fetch('/api/templates'),
-      ]);
+    const entry = loadActiveProfile(emptyProfile);
+    setProfile(entry.profile);
+    setActiveId(entry.id);
+    setProfiles(getAllProfiles());
+    setCoverLetter(loadCoverLetter(emptyCoverLetter));
+    setLoaded(true);
 
-      if (profileRes.ok) {
-        const d = await profileRes.json();
-        if (d.profile?.version === 2) setProfile(d.profile);
-      }
-      if (coverLetterRes.ok) {
-        const d = await coverLetterRes.json();
-        if (d.coverLetter) setCoverLetter(d.coverLetter);
-      }
-      if (templatesRes.ok) {
-        const d = await templatesRes.json();
-        setTemplates(d.templates || []);
-      }
-    };
-    load();
+    // Load templates from API
+    fetch('/api/templates')
+      .then((r) => r.ok ? r.json() : { templates: [] })
+      .then((d) => setTemplates(d.templates || []))
+      .catch(() => {});
   }, []);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    setStatus('저장 중...');
+  // Auto-save profile on change (debounced)
+  useEffect(() => {
+    if (!loaded || !activeId) return;
+    debouncedSave(() => {
+      saveProfile(activeId, profile);
+      setProfiles(getAllProfiles());
+      setStatus('자동 저장됨');
+    }, 500);
+  }, [profile, loaded, activeId]);
 
-    const [profileRes, coverLetterRes] = await Promise.all([
-      fetch('/api/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile }),
-      }),
-      fetch('/api/cover-letter', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coverLetter }),
-      }),
-    ]);
+  // Auto-save cover letter on change (debounced)
+  useEffect(() => {
+    if (!loaded) return;
+    debouncedSave(() => {
+      saveCoverLetter(coverLetter);
+    }, 500);
+  }, [coverLetter, loaded]);
 
-    setIsSaving(false);
-    setStatus(profileRes.ok && coverLetterRes.ok ? '저장 완료' : '저장 실패');
+  const updateProfile = useCallback((key, value) => {
+    setProfile((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  // ─── Profile management handlers ────────────────────────────
+  const handleSwitchProfile = (id) => {
+    // Save current first
+    if (activeId) saveProfile(activeId, profile);
+    saveCoverLetter(coverLetter);
+
+    setActiveProfileId(id);
+    setActiveId(id);
+    const allProfiles = getAllProfiles();
+    const entry = allProfiles.find((p) => p.id === id);
+    if (entry) setProfile(entry.profile);
+    setProfiles(allProfiles);
+  };
+
+  const handleSaveAs = () => {
+    const name = prompt('새 프로필 이름:');
+    if (!name) return;
+    const entry = createProfile(name, profile);
+    setActiveId(entry.id);
+    setProfiles(getAllProfiles());
+    setStatus(`"${name}" 저장됨`);
+  };
+
+  const handleRename = () => {
+    const current = profiles.find((p) => p.id === activeId);
+    const name = prompt('새 이름:', current?.name || '');
+    if (!name) return;
+    renameProfile(activeId, name);
+    setProfiles(getAllProfiles());
+  };
+
+  const handleDuplicate = () => {
+    const entry = duplicateProfile(activeId);
+    if (entry) {
+      setActiveId(entry.id);
+      setProfile(entry.profile);
+      setProfiles(getAllProfiles());
+      setStatus('프로필 복제됨');
+    }
+  };
+
+  const handleDelete = () => {
+    if (!confirm('정말 이 프로필을 삭제하시겠습니까?')) return;
+    const remaining = deleteProfile(activeId);
+    setProfiles(remaining);
+    if (remaining.length > 0) {
+      const entry = loadActiveProfile(emptyProfile);
+      setActiveId(entry.id);
+      setProfile(entry.profile);
+    }
+  };
+
+  const handleExport = () => {
+    exportProfileJSON(profile, coverLetter);
+    setStatus('내보내기 완료');
+  };
+
+  const handleImport = async () => {
+    const file = await openFilePicker();
+    if (!file) return;
+    try {
+      const result = await importProfileJSON(file);
+      setProfile(result.profile);
+      if (result.coverLetter) setCoverLetter(result.coverLetter);
+      if (activeId) saveProfile(activeId, result.profile);
+      if (result.coverLetter) saveCoverLetter(result.coverLetter);
+      setProfiles(getAllProfiles());
+      setStatus('가져오기 완료');
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleReset = () => {
+    resetAllData();
+    setProfile(emptyProfile);
+    setCoverLetter(emptyCoverLetter);
+    const entry = loadActiveProfile(emptyProfile);
+    setActiveId(entry.id);
+    setProfiles(getAllProfiles());
+    setStatus('초기화 완료');
   };
 
   const handleGenerate = async ({ templateId, file }) => {
@@ -116,47 +188,50 @@ export default function Home() {
     formData.append('template_id', templateId);
     formData.append('file', file);
 
-    const res = await fetch('/api/generate', { method: 'POST', body: formData });
-    const data = await res.json();
-    setIsGenerating(false);
+    try {
+      const res = await fetch('/api/generate', { method: 'POST', body: formData });
+      const data = await res.json();
+      setIsGenerating(false);
 
-    if (res.ok && data.success) {
-      setStatus('PDF 생성 완료');
-      setDownloadUrl(data.downloadUrl);
-      setLog(data.log || '');
-    } else {
-      setStatus('PDF 생성 실패');
-      setLog(data.log || data.error || '');
+      if (res.ok && data.success) {
+        setStatus('PDF 생성 완료');
+        setDownloadUrl(data.downloadUrl);
+        setLog(data.log || '');
+      } else {
+        setStatus('PDF 생성 실패');
+        setLog(data.log || data.error || '');
+      }
+    } catch {
+      setIsGenerating(false);
+      setStatus('PDF 생성 실패 (네트워크 오류)');
     }
-  };
-
-  const updateProfile = (key, value) => {
-    setProfile((prev) => ({ ...prev, [key]: value }));
   };
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'personal':
-        return <PersonalInfoForm data={profile.personal} onChange={(v) => updateProfile('personal', v)} />;
-      case 'certs':
-        return (
-          <CertificationForm
-            teacherCerts={profile.teacher_cert}
-            otherCerts={profile.other_certs}
-            onChangeTeacher={(v) => updateProfile('teacher_cert', v)}
-            onChangeOther={(v) => updateProfile('other_certs', v)}
-          />
-        );
-      case 'education':
-        return <EducationForm items={profile.education} onChange={(v) => updateProfile('education', v)} />;
-      case 'career':
-        return <CareerForm items={profile.career} onChange={(v) => updateProfile('career', v)} />;
-      case 'military':
+      case 'basic':
         return (
           <>
+            <PersonalInfoForm data={profile.personal} onChange={(v) => updateProfile('personal', v)} />
+            <div style={{ height: 24 }} />
+            <EducationForm items={profile.education} onChange={(v) => updateProfile('education', v)} />
+            <div style={{ height: 24 }} />
+            <CareerForm items={profile.career} onChange={(v) => updateProfile('career', v)} />
+            <div style={{ height: 24 }} />
             <MilitaryForm data={profile.military} onChange={(v) => updateProfile('military', v)} />
-            <AdditionalForm data={profile.additional} onChange={(v) => updateProfile('additional', v)} />
+            <div style={{ height: 24 }} />
+            <AdditionalForm
+              data={{ disability: '', veteran: '', multi_cultural: false, custom_fields: profile.custom_fields || [] }}
+              onChange={(v) => updateProfile('custom_fields', v.custom_fields || [])}
+            />
           </>
+        );
+      case 'teacher':
+        return (
+          <TeacherPackForm
+            teacherPack={profile.teacher_pack}
+            onChange={(v) => updateProfile('teacher_pack', v)}
+          />
         );
       case 'cover_letter':
         return (
@@ -165,7 +240,7 @@ export default function Home() {
             onChange={(sections) => setCoverLetter((prev) => ({ ...prev, sections }))}
           />
         );
-      case 'generate':
+      case 'output':
         return (
           <GeneratePanel
             templates={templates}
@@ -186,26 +261,35 @@ export default function Home() {
       <header className={styles.header}>
         <div>
           <h1>기간제 교사 지원서 자동 생성기</h1>
-          <p>프로필 입력 → 템플릿 선택 → PDF 자동 생성</p>
+          <p>프로필 입력 → 자기소개서 작성 → PDF 자동 생성</p>
         </div>
         <div className={styles.headerActions}>
           <span className={styles.status}>{status}</span>
-          <button
-            type="button"
-            className={styles.saveBtn}
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? '저장 중...' : '전체 저장'}
-          </button>
+          {isFeatureEnabled('cloud_sync') && (
+            <button type="button" className={styles.saveBtn} disabled>
+              {auth.isLoggedIn ? '클라우드 동기화' : 'Sign in'}
+            </button>
+          )}
         </div>
       </header>
 
       <div className={styles.container}>
+        <ProfileBar
+          profiles={profiles}
+          activeId={activeId}
+          onSwitch={handleSwitchProfile}
+          onSaveAs={handleSaveAs}
+          onRename={handleRename}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+          onExport={handleExport}
+          onImport={handleImport}
+        />
         <TabNav tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
         <main className={styles.main}>
           {renderTab()}
         </main>
+        <PrivacyNotice onReset={handleReset} />
       </div>
     </div>
   );

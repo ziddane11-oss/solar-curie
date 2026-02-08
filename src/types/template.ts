@@ -4,23 +4,19 @@ export type RuleType = 'find_replace' | 'bookmark' | 'table_row';
 // ─── 단일 매핑 규칙 ────────────────────────────────────────────
 export interface MappingRule {
   type: RuleType;
-  // find_replace: 문서 내 텍스트 치환
-  find?: string;                  // 찾을 문자열 (e.g. "<<NAME>>")
-  // bookmark: 한글 필드 이름
-  field?: string;                 // 필드명 (e.g. "ApplicantName")
-  // table_row: 반복 데이터 (경력, 학력)
-  table_id?: string;              // 테이블 식별자
-  row_template?: string[];        // 컬럼별 value_path 배열
-  // 공통
-  value_path: string;             // 프로필/자소서 데이터 경로 (e.g. "personal.name")
-  fallback?: string;              // 매핑 실패 시 기본값
+  find?: string;
+  field?: string;
+  table_id?: string;
+  row_template?: string[];
+  value_path: string;
+  fallback?: string;
   transform?: 'date_kr' | 'phone_format' | 'period_calc' | 'none';
 }
 
-// ─── 필드 요구사항 (Template가 요구하는 필드 목록) ──────────────
+// ─── 필드 요구사항 ──────────────────────────────────────────────
 export interface FieldRequirement {
   value_path: string;
-  label: string;                  // 사람이 읽을 수 있는 필드명
+  label: string;
   required: boolean;
 }
 
@@ -30,6 +26,7 @@ export interface TemplateMap {
   template_name: string;
   version: number;
   description: string;
+  supported_packs: string[];
   required_fields: FieldRequirement[];
   rules: MappingRule[];
 }
@@ -43,7 +40,7 @@ export interface TemplateListItem {
   requiredFieldCount: number;
 }
 
-// ─── 매핑 결과 (엔진 출력) ─────────────────────────────────────
+// ─── 매핑 결과 ──────────────────────────────────────────────────
 export interface MappingResult {
   rule: MappingRule;
   resolved_value: string;
@@ -56,4 +53,13 @@ export interface MappingReport {
   resolved: number;
   missing: number;
   results: MappingResult[];
+}
+
+// ─── TemplateMapper 인터페이스 ──────────────────────────────────
+export interface TemplateMapper {
+  id: string;
+  name: string;
+  supportedPacks: string[];
+  map(profile: any, coverLetter: any): Record<string, string>;
+  validate(profile: any, coverLetter: any): { field: string; label: string }[];
 }

@@ -1,134 +1,154 @@
+import { z } from 'zod';
+
 // ─── 인적사항 (Personal Information) ────────────────────────────
-export interface PersonalInfo {
-  name: string;                   // 이름 (필수)
-  name_hanja: string;             // 한자 이름
-  birth: string;                  // 생년월일 YYYY-MM-DD (필수)
-  gender: '남' | '여' | '';       // 성별
-  phone: string;                  // 연락처 (필수)
-  phone_secondary: string;        // 보조 연락처
-  email: string;                  // 이메일
-  address: string;                // 주소 (필수)
-  address_detail: string;         // 상세주소
-  postal_code: string;            // 우편번호
-}
-
-// ─── 교원자격증 (Teacher Certification) ─────────────────────────
-export interface TeacherCertification {
-  cert_type: string;              // 자격 종류: 정교사(1급), 정교사(2급), 준교사, 전문상담교사 등
-  cert_subject: string;           // 표시 과목 (필수)
-  cert_number: string;            // 자격증 번호
-  cert_date: string;              // 취득일 YYYY-MM-DD
-  issuer: string;                 // 발급 기관
-}
-
-// ─── 기타 자격증 (Other Certifications) ─────────────────────────
-export interface OtherCertification {
-  cert_name: string;              // 자격증명
-  cert_number: string;            // 번호
-  cert_date: string;              // 취득일
-  issuer: string;                 // 발급 기관
-}
+export const PersonalInfoSchema = z.object({
+  name: z.string().default(''),
+  name_hanja: z.string().default(''),
+  birth: z.string().default(''),
+  gender: z.enum(['남', '여', '']).default(''),
+  phone: z.string().default(''),
+  phone_secondary: z.string().default(''),
+  email: z.string().default(''),
+  address: z.string().default(''),
+  address_detail: z.string().default(''),
+  postal_code: z.string().default(''),
+});
+export type PersonalInfo = z.infer<typeof PersonalInfoSchema>;
 
 // ─── 학력 (Education) ───────────────────────────────────────────
-export interface Education {
-  school: string;                 // 학교명 (필수)
-  major: string;                  // 전공 (필수)
-  degree: '학사' | '석사' | '박사' | '전문학사' | '';  // 학위
-  status: '졸업' | '재학' | '수료' | '중퇴' | '';      // 상태
-  start_date: string;             // 입학일 YYYY-MM
-  end_date: string;               // 졸업일 YYYY-MM
-  thesis_title: string;           // 논문 제목 (석사/박사)
-}
+export const EducationSchema = z.object({
+  school: z.string().default(''),
+  major: z.string().default(''),
+  degree: z.enum(['학사', '석사', '박사', '전문학사', '']).default(''),
+  status: z.enum(['졸업', '재학', '수료', '중퇴', '']).default(''),
+  start_date: z.string().default(''),
+  end_date: z.string().default(''),
+  thesis_title: z.string().default(''),
+});
+export type Education = z.infer<typeof EducationSchema>;
 
 // ─── 경력 (Career History) ──────────────────────────────────────
-export interface Career {
-  institution: string;            // 기관명 (필수)
-  position: string;               // 직위: 기간제교사, 강사, 담임 등
-  subject: string;                // 담당 교과
-  start_date: string;             // 시작일 YYYY-MM-DD
-  end_date: string;               // 종료일 YYYY-MM-DD
-  is_contract: boolean;           // 기간제 여부
-  total_months: number;           // 근무 개월수 (자동 계산 가능)
-  notes: string;                  // 비고
-}
+export const CareerSchema = z.object({
+  institution: z.string().default(''),
+  position: z.string().default(''),
+  subject: z.string().default(''),
+  start_date: z.string().default(''),
+  end_date: z.string().default(''),
+  is_contract: z.boolean().default(true),
+  total_months: z.number().default(0),
+  notes: z.string().default(''),
+});
+export type Career = z.infer<typeof CareerSchema>;
 
 // ─── 병역 (Military Service) ────────────────────────────────────
-export interface Military {
-  status: '필' | '미필' | '면제' | '해당없음' | '';
-  branch: string;                 // 군별
-  rank: string;                   // 계급
-  start_date: string;             // 복무 시작
-  end_date: string;               // 복무 종료
-}
+export const MilitarySchema = z.object({
+  status: z.enum(['필', '미필', '면제', '해당없음', '']).default(''),
+  branch: z.string().default(''),
+  rank: z.string().default(''),
+  start_date: z.string().default(''),
+  end_date: z.string().default(''),
+});
+export type Military = z.infer<typeof MilitarySchema>;
 
-// ─── 기타 (Additional Information) ──────────────────────────────
-export interface AdditionalInfo {
-  disability: string;             // 장애 여부/등급
-  veteran: string;                // 보훈 대상
-  multi_cultural: boolean;        // 다문화 가정
-  custom_fields: CustomField[];   // 사용자 정의 필드
-}
+// ─── 기타 자격증 (Other Certifications) ─────────────────────────
+export const OtherCertSchema = z.object({
+  cert_name: z.string().default(''),
+  cert_number: z.string().default(''),
+  cert_date: z.string().default(''),
+  issuer: z.string().default(''),
+});
+export type OtherCert = z.infer<typeof OtherCertSchema>;
 
-export interface CustomField {
-  key: string;
-  label: string;
-  value: string;
-}
+// ─── 사용자 정의 필드 ───────────────────────────────────────────
+export const CustomFieldSchema = z.object({
+  key: z.string().default(''),
+  label: z.string().default(''),
+  value: z.string().default(''),
+});
+export type CustomField = z.infer<typeof CustomFieldSchema>;
 
-// ─── 전체 프로필 (Complete Profile) ─────────────────────────────
-export interface Profile {
-  version: number;                // 스키마 버전
-  personal: PersonalInfo;
-  teacher_cert: TeacherCertification[];
-  other_certs: OtherCertification[];
-  education: Education[];
-  career: Career[];
-  military: Military;
-  additional: AdditionalInfo;
-}
+// ─── 교원자격증 (Teacher Certification) ─────────────────────────
+export const TeacherCertSchema = z.object({
+  cert_type: z.string().default(''),
+  cert_subject: z.string().default(''),
+  cert_number: z.string().default(''),
+  cert_date: z.string().default(''),
+  issuer: z.string().default(''),
+});
+export type TeacherCert = z.infer<typeof TeacherCertSchema>;
 
-// ─── 빈 기본값 팩토리 ──────────────────────────────────────────
-export const emptyPersonalInfo: PersonalInfo = {
-  name: '', name_hanja: '', birth: '', gender: '',
-  phone: '', phone_secondary: '', email: '',
-  address: '', address_detail: '', postal_code: '',
-};
+// ─── NICE 인력풀 ────────────────────────────────────────────────
+export const NicePoolSchema = z.object({
+  registered: z.boolean().default(false),
+  pool_region: z.string().default(''),
+  pool_subject: z.string().default(''),
+  pool_year: z.string().default(''),
+});
+export type NicePool = z.infer<typeof NicePoolSchema>;
 
-export const emptyTeacherCert: TeacherCertification = {
-  cert_type: '', cert_subject: '', cert_number: '',
-  cert_date: '', issuer: '',
-};
+// ─── 학교 지원 대상 ────────────────────────────────────────────
+export const SchoolTargetSchema = z.object({
+  school_name: z.string().default(''),
+  department: z.string().default(''),
+  tasks: z.string().default(''),
+  contract_reason: z.string().default(''),
+  contract_start: z.string().default(''),
+  contract_end: z.string().default(''),
+});
+export type SchoolTarget = z.infer<typeof SchoolTargetSchema>;
 
-export const emptyOtherCert: OtherCertification = {
-  cert_name: '', cert_number: '', cert_date: '', issuer: '',
-};
+// ─── TeacherPack (교사용 확장) ──────────────────────────────────
+export const TeacherPackSchema = z.object({
+  teacher_cert: z.array(TeacherCertSchema).default([]),
+  other_certs: z.array(OtherCertSchema).default([]),
+  nice_pool: NicePoolSchema.default(() => ({ registered: false, pool_region: '', pool_subject: '', pool_year: '' })),
+  school_target: SchoolTargetSchema.default(() => ({ school_name: '', department: '', tasks: '', contract_reason: '', contract_start: '', contract_end: '' })),
+});
+export type TeacherPack = z.infer<typeof TeacherPackSchema>;
 
-export const emptyEducation: Education = {
-  school: '', major: '', degree: '', status: '',
-  start_date: '', end_date: '', thesis_title: '',
-};
+// ─── UniversalProfile (v3) ──────────────────────────────────────
+export const UniversalProfileSchema = z.object({
+  version: z.literal(3),
+  personal: PersonalInfoSchema.default(() => ({
+    name: '', name_hanja: '', birth: '', gender: '' as const,
+    phone: '', phone_secondary: '', email: '',
+    address: '', address_detail: '', postal_code: '',
+  })),
+  education: z.array(EducationSchema).default([]),
+  career: z.array(CareerSchema).default([]),
+  military: MilitarySchema.default(() => ({ status: '' as const, branch: '', rank: '', start_date: '', end_date: '' })),
+  other_certs: z.array(OtherCertSchema).default([]),
+  custom_fields: z.array(CustomFieldSchema).default([]),
+  teacher_pack: TeacherPackSchema.optional(),
+});
+export type UniversalProfile = z.infer<typeof UniversalProfileSchema>;
 
-export const emptyCareer: Career = {
-  institution: '', position: '', subject: '',
-  start_date: '', end_date: '', is_contract: true,
-  total_months: 0, notes: '',
-};
+// ─── 저장된 프로필 엔트리 (LocalStorage용) ─────────────────────
+export const SavedProfileEntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  updatedAt: z.string(),
+  profile: UniversalProfileSchema,
+});
+export type SavedProfileEntry = z.infer<typeof SavedProfileEntrySchema>;
 
-export const emptyMilitary: Military = {
-  status: '', branch: '', rank: '', start_date: '', end_date: '',
-};
-
-export const emptyAdditional: AdditionalInfo = {
-  disability: '', veteran: '', multi_cultural: false, custom_fields: [],
-};
-
-export const emptyProfile: Profile = {
-  version: 2,
-  personal: emptyPersonalInfo,
-  teacher_cert: [{ ...emptyTeacherCert }],
+// ─── 빈 기본값 ─────────────────────────────────────────────────
+export const emptyProfile: UniversalProfile = {
+  version: 3,
+  personal: {
+    name: '', name_hanja: '', birth: '', gender: '',
+    phone: '', phone_secondary: '', email: '',
+    address: '', address_detail: '', postal_code: '',
+  },
+  education: [{ school: '', major: '', degree: '', status: '', start_date: '', end_date: '', thesis_title: '' }],
+  career: [{ institution: '', position: '', subject: '', start_date: '', end_date: '', is_contract: true, total_months: 0, notes: '' }],
+  military: { status: '', branch: '', rank: '', start_date: '', end_date: '' },
   other_certs: [],
-  education: [{ ...emptyEducation }],
-  career: [{ ...emptyCareer }],
-  military: { ...emptyMilitary },
-  additional: { ...emptyAdditional },
+  custom_fields: [],
+  teacher_pack: {
+    teacher_cert: [{ cert_type: '', cert_subject: '', cert_number: '', cert_date: '', issuer: '' }],
+    other_certs: [],
+    nice_pool: { registered: false, pool_region: '', pool_subject: '', pool_year: '' },
+    school_target: { school_name: '', department: '', tasks: '', contract_reason: '', contract_start: '', contract_end: '' },
+  },
 };

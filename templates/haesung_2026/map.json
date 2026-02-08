@@ -3,6 +3,7 @@
   "template_name": "해성고 2026 지원서",
   "version": 1,
   "description": "해성고등학교 2026학년도 기간제교사 채용 지원서 양식",
+  "supported_packs": ["teacher"],
   "required_fields": [
     { "value_path": "personal.name", "label": "이름", "required": true },
     { "value_path": "personal.phone", "label": "연락처", "required": true },
