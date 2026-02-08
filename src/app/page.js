@@ -1,25 +1,57 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import TabNav from '@/components/ui/TabNav';
+import PersonalInfoForm from '@/components/forms/PersonalInfoForm';
+import CertificationForm from '@/components/forms/CertificationForm';
+import EducationForm from '@/components/forms/EducationForm';
+import CareerForm from '@/components/forms/CareerForm';
+import MilitaryForm from '@/components/forms/MilitaryForm';
+import AdditionalForm from '@/components/forms/AdditionalForm';
+import CoverLetterForm from '@/components/forms/CoverLetterForm';
+import GeneratePanel from '@/components/forms/GeneratePanel';
 import styles from './page.module.css';
 
-const emptyProfile = {
-  person: {
-    name: '',
-    birth: '',
-    phone: '',
-    email: '',
-    address: ''
+const EMPTY_PROFILE = {
+  version: 2,
+  personal: {
+    name: '', name_hanja: '', birth: '', gender: '',
+    phone: '', phone_secondary: '', email: '',
+    address: '', address_detail: '', postal_code: '',
   },
-  education: [{ school: '', major: '', period: '', degree: '' }],
-  career: [{ school: '', period: '', subject: '', role: '', notes: '' }]
+  teacher_cert: [{ cert_type: '', cert_subject: '', cert_number: '', cert_date: '', issuer: '' }],
+  other_certs: [],
+  education: [{ school: '', major: '', degree: '', status: '', start_date: '', end_date: '', thesis_title: '' }],
+  career: [{ institution: '', position: '', subject: '', start_date: '', end_date: '', is_contract: true, total_months: 0, notes: '' }],
+  military: { status: '', branch: '', rank: '', start_date: '', end_date: '' },
+  additional: { disability: '', veteran: '', multi_cultural: false, custom_fields: [] },
 };
 
+const EMPTY_COVER_LETTER = {
+  version: 1,
+  sections: [
+    { id: 'self_intro', title: '자기소개', body: '', max_length: 1000 },
+    { id: 'motivation', title: '지원동기', body: '', max_length: 1000 },
+    { id: 'philosophy', title: '교육관', body: '', max_length: 1000 },
+    { id: 'future_plan', title: '향후 계획', body: '', max_length: 500 },
+  ],
+};
+
+const TABS = [
+  { id: 'personal', label: '인적사항' },
+  { id: 'certs', label: '자격증' },
+  { id: 'education', label: '학력' },
+  { id: 'career', label: '경력' },
+  { id: 'military', label: '병역/기타' },
+  { id: 'cover_letter', label: '자기소개서' },
+  { id: 'generate', label: 'PDF 생성' },
+];
+
 export default function Home() {
-  const [profile, setProfile] = useState(emptyProfile);
+  const [profile, setProfile] = useState(EMPTY_PROFILE);
+  const [coverLetter, setCoverLetter] = useState(EMPTY_COVER_LETTER);
   const [templates, setTemplates] = useState([]);
-  const [selectedTemplate, setSelectedTemplate] = useState('');
-  const [file, setFile] = useState(null);
+  const [activeTab, setActiveTab] = useState('personal');
   const [status, setStatus] = useState('');
   const [log, setLog] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
@@ -27,94 +59,53 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const response = await fetch('/api/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data.profile || emptyProfile);
+    const load = async () => {
+      const [profileRes, coverLetterRes, templatesRes] = await Promise.all([
+        fetch('/api/profile'),
+        fetch('/api/cover-letter'),
+        fetch('/api/templates'),
+      ]);
+
+      if (profileRes.ok) {
+        const d = await profileRes.json();
+        if (d.profile?.version === 2) setProfile(d.profile);
+      }
+      if (coverLetterRes.ok) {
+        const d = await coverLetterRes.json();
+        if (d.coverLetter) setCoverLetter(d.coverLetter);
+      }
+      if (templatesRes.ok) {
+        const d = await templatesRes.json();
+        setTemplates(d.templates || []);
       }
     };
-
-    const loadTemplates = async () => {
-      const response = await fetch('/api/templates');
-      if (response.ok) {
-        const data = await response.json();
-        setTemplates(data.templates || []);
-        if (data.templates?.length) {
-          setSelectedTemplate(data.templates[0].id);
-        }
-      }
-    };
-
-    loadProfile();
-    loadTemplates();
+    load();
   }, []);
 
-  const handlePersonChange = (field, value) => {
-    setProfile((prev) => ({
-      ...prev,
-      person: {
-        ...prev.person,
-        [field]: value
-      }
-    }));
-  };
-
-  const handleEducationChange = (index, field, value) => {
-    setProfile((prev) => {
-      const education = [...prev.education];
-      education[index] = { ...education[index], [field]: value };
-      return { ...prev, education };
-    });
-  };
-
-  const handleCareerChange = (index, field, value) => {
-    setProfile((prev) => {
-      const career = [...prev.career];
-      career[index] = { ...career[index], [field]: value };
-      return { ...prev, career };
-    });
-  };
-
-  const handleAddEducation = () => {
-    setProfile((prev) => ({
-      ...prev,
-      education: [...prev.education, { school: '', major: '', period: '', degree: '' }]
-    }));
-  };
-
-  const handleAddCareer = () => {
-    setProfile((prev) => ({
-      ...prev,
-      career: [...prev.career, { school: '', period: '', subject: '', role: '', notes: '' }]
-    }));
-  };
-
-  const handleSaveProfile = async () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setStatus('프로필 저장 중...');
-    const response = await fetch('/api/profile', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile })
-    });
+    setStatus('저장 중...');
+
+    const [profileRes, coverLetterRes] = await Promise.all([
+      fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile }),
+      }),
+      fetch('/api/cover-letter', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverLetter }),
+      }),
+    ]);
+
     setIsSaving(false);
-    if (response.ok) {
-      setStatus('프로필 저장 완료');
-    } else {
-      setStatus('프로필 저장 실패');
-    }
+    setStatus(profileRes.ok && coverLetterRes.ok ? '저장 완료' : '저장 실패');
   };
 
-  const handleGenerate = async () => {
-    if (!file) {
-      setStatus('파일을 선택해 주세요.');
-      return;
-    }
-    if (!selectedTemplate) {
-      setStatus('템플릿을 선택해 주세요.');
-      return;
-    }
+  const handleGenerate = async ({ templateId, file }) => {
+    if (!file) { setStatus('파일을 선택해 주세요.'); return; }
+    if (!templateId) { setStatus('템플릿을 선택해 주세요.'); return; }
 
     setIsGenerating(true);
     setStatus('PDF 생성 중...');
@@ -122,222 +113,100 @@ export default function Home() {
     setLog('');
 
     const formData = new FormData();
-    formData.append('template_id', selectedTemplate);
+    formData.append('template_id', templateId);
     formData.append('file', file);
 
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      body: formData
-    });
-
-    const data = await response.json();
+    const res = await fetch('/api/generate', { method: 'POST', body: formData });
+    const data = await res.json();
     setIsGenerating(false);
 
-    if (response.ok && data.success) {
+    if (res.ok && data.success) {
       setStatus('PDF 생성 완료');
       setDownloadUrl(data.downloadUrl);
       setLog(data.log || '');
     } else {
       setStatus('PDF 생성 실패');
-      setLog(data.log || data.error || '알 수 없는 오류');
+      setLog(data.log || data.error || '');
     }
   };
 
-  const templateOptions = useMemo(() => {
-    return templates.map((template) => (
-      <option key={template.id} value={template.id}>
-        {template.name || template.id}
-      </option>
-    ));
-  }, [templates]);
+  const updateProfile = (key, value) => {
+    setProfile((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const renderTab = () => {
+    switch (activeTab) {
+      case 'personal':
+        return <PersonalInfoForm data={profile.personal} onChange={(v) => updateProfile('personal', v)} />;
+      case 'certs':
+        return (
+          <CertificationForm
+            teacherCerts={profile.teacher_cert}
+            otherCerts={profile.other_certs}
+            onChangeTeacher={(v) => updateProfile('teacher_cert', v)}
+            onChangeOther={(v) => updateProfile('other_certs', v)}
+          />
+        );
+      case 'education':
+        return <EducationForm items={profile.education} onChange={(v) => updateProfile('education', v)} />;
+      case 'career':
+        return <CareerForm items={profile.career} onChange={(v) => updateProfile('career', v)} />;
+      case 'military':
+        return (
+          <>
+            <MilitaryForm data={profile.military} onChange={(v) => updateProfile('military', v)} />
+            <AdditionalForm data={profile.additional} onChange={(v) => updateProfile('additional', v)} />
+          </>
+        );
+      case 'cover_letter':
+        return (
+          <CoverLetterForm
+            sections={coverLetter.sections}
+            onChange={(sections) => setCoverLetter((prev) => ({ ...prev, sections }))}
+          />
+        );
+      case 'generate':
+        return (
+          <GeneratePanel
+            templates={templates}
+            onGenerate={handleGenerate}
+            isGenerating={isGenerating}
+            status={status}
+            downloadUrl={downloadUrl}
+            log={log}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
           <h1>기간제 교사 지원서 자동 생성기</h1>
-          <p>한글 양식 업로드 → 자동 채움 → PDF 다운로드</p>
+          <p>프로필 입력 → 템플릿 선택 → PDF 자동 생성</p>
         </div>
-        <div className={styles.status}>{status}</div>
+        <div className={styles.headerActions}>
+          <span className={styles.status}>{status}</span>
+          <button
+            type="button"
+            className={styles.saveBtn}
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? '저장 중...' : '전체 저장'}
+          </button>
+        </div>
       </header>
 
-      <main className={styles.main}>
-        <section className={styles.panel}>
-          <h2>기본 정보 (profile.json)</h2>
-          <div className={styles.section}>
-            <h3>인적사항</h3>
-            <div className={styles.grid}>
-              <label>
-                이름
-                <input
-                  value={profile.person.name}
-                  onChange={(event) => handlePersonChange('name', event.target.value)}
-                />
-              </label>
-              <label>
-                생년월일
-                <input
-                  value={profile.person.birth}
-                  onChange={(event) => handlePersonChange('birth', event.target.value)}
-                />
-              </label>
-              <label>
-                휴대폰
-                <input
-                  value={profile.person.phone}
-                  onChange={(event) => handlePersonChange('phone', event.target.value)}
-                />
-              </label>
-              <label>
-                이메일
-                <input
-                  value={profile.person.email}
-                  onChange={(event) => handlePersonChange('email', event.target.value)}
-                />
-              </label>
-              <label className={styles.full}>
-                주소
-                <input
-                  value={profile.person.address}
-                  onChange={(event) => handlePersonChange('address', event.target.value)}
-                />
-              </label>
-            </div>
-          </div>
-
-          <div className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <h3>학력</h3>
-              <button type="button" onClick={handleAddEducation}>
-                + 항목 추가
-              </button>
-            </div>
-            {profile.education.map((entry, index) => (
-              <div key={`edu-${index}`} className={styles.card}>
-                <label>
-                  학교
-                  <input
-                    value={entry.school}
-                    onChange={(event) => handleEducationChange(index, 'school', event.target.value)}
-                  />
-                </label>
-                <label>
-                  전공
-                  <input
-                    value={entry.major}
-                    onChange={(event) => handleEducationChange(index, 'major', event.target.value)}
-                  />
-                </label>
-                <label>
-                  기간
-                  <input
-                    value={entry.period}
-                    onChange={(event) => handleEducationChange(index, 'period', event.target.value)}
-                  />
-                </label>
-                <label>
-                  학위
-                  <input
-                    value={entry.degree}
-                    onChange={(event) => handleEducationChange(index, 'degree', event.target.value)}
-                  />
-                </label>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <h3>경력</h3>
-              <button type="button" onClick={handleAddCareer}>
-                + 항목 추가
-              </button>
-            </div>
-            {profile.career.map((entry, index) => (
-              <div key={`career-${index}`} className={styles.card}>
-                <label>
-                  학교/기관
-                  <input
-                    value={entry.school}
-                    onChange={(event) => handleCareerChange(index, 'school', event.target.value)}
-                  />
-                </label>
-                <label>
-                  기간
-                  <input
-                    value={entry.period}
-                    onChange={(event) => handleCareerChange(index, 'period', event.target.value)}
-                  />
-                </label>
-                <label>
-                  과목
-                  <input
-                    value={entry.subject}
-                    onChange={(event) => handleCareerChange(index, 'subject', event.target.value)}
-                  />
-                </label>
-                <label>
-                  역할
-                  <input
-                    value={entry.role}
-                    onChange={(event) => handleCareerChange(index, 'role', event.target.value)}
-                  />
-                </label>
-                <label className={styles.full}>
-                  특이사항
-                  <input
-                    value={entry.notes}
-                    onChange={(event) => handleCareerChange(index, 'notes', event.target.value)}
-                  />
-                </label>
-              </div>
-            ))}
-          </div>
-
-          <button className={styles.primary} type="button" onClick={handleSaveProfile} disabled={isSaving}>
-            {isSaving ? '저장 중...' : '프로필 저장'}
-          </button>
-        </section>
-
-        <section className={styles.panel}>
-          <h2>PDF 생성</h2>
-          <div className={styles.section}>
-            <label>
-              템플릿 선택
-              <select value={selectedTemplate} onChange={(event) => setSelectedTemplate(event.target.value)}>
-                {templateOptions}
-              </select>
-            </label>
-            <label>
-              지원서 파일 업로드 (.hwp/.hwpx)
-              <input
-                type="file"
-                accept=".hwp,.hwpx"
-                onChange={(event) => setFile(event.target.files?.[0] || null)}
-              />
-            </label>
-          </div>
-          <button className={styles.primary} type="button" onClick={handleGenerate} disabled={isGenerating}>
-            {isGenerating ? '생성 중...' : 'PDF 생성'}
-          </button>
-
-          <div className={styles.section}>
-            <h3>결과</h3>
-            {downloadUrl ? (
-              <a className={styles.download} href={downloadUrl}>
-                result.pdf 다운로드
-              </a>
-            ) : (
-              <p className={styles.muted}>아직 생성된 PDF가 없습니다.</p>
-            )}
-          </div>
-
-          <div className={styles.section}>
-            <h3>로그</h3>
-            <pre className={styles.log}>{log || '로그가 아직 없습니다.'}</pre>
-          </div>
-        </section>
-      </main>
+      <div className={styles.container}>
+        <TabNav tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+        <main className={styles.main}>
+          {renderTab()}
+        </main>
+      </div>
     </div>
   );
 }

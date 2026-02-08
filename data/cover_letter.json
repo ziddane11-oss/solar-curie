@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "sections": [
+    { "id": "self_intro",  "title": "자기소개",   "body": "", "max_length": 1000 },
+    { "id": "motivation",  "title": "지원동기",   "body": "", "max_length": 1000 },
+    { "id": "philosophy",  "title": "교육관",     "body": "", "max_length": 1000 },
+    { "id": "future_plan", "title": "향후 계획",  "body": "", "max_length": 500  }
+  ]
+}

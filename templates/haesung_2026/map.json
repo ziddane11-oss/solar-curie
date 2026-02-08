@@ -1,11 +1,27 @@
 {
   "template_id": "haesung_2026",
   "template_name": "해성고 2026 지원서",
+  "version": 1,
+  "description": "해성고등학교 2026학년도 기간제교사 채용 지원서 양식",
+  "required_fields": [
+    { "value_path": "personal.name", "label": "이름", "required": true },
+    { "value_path": "personal.phone", "label": "연락처", "required": true },
+    { "value_path": "teacher_cert[0].cert_subject", "label": "교원자격 과목", "required": true }
+  ],
   "rules": [
-    { "type": "find_replace", "find": "<<NAME>>", "value_path": "person.name" },
-    { "type": "find_replace", "find": "<<PHONE>>", "value_path": "person.phone" },
-    { "type": "find_replace", "find": "<<EMAIL>>", "value_path": "person.email" },
-    { "type": "find_replace", "find": "<<EDU1>>", "value_path": "education[0].school" },
-    { "type": "find_replace", "find": "<<CAREER_TEXT>>", "value_path": "career_text_compiled" }
+    { "type": "find_replace", "find": "<<NAME>>", "value_path": "personal.name" },
+    { "type": "find_replace", "find": "<<BIRTH>>", "value_path": "personal.birth", "transform": "date_kr" },
+    { "type": "find_replace", "find": "<<PHONE>>", "value_path": "personal.phone", "transform": "phone_format" },
+    { "type": "find_replace", "find": "<<EMAIL>>", "value_path": "personal.email" },
+    { "type": "find_replace", "find": "<<ADDRESS>>", "value_path": "personal.address" },
+    { "type": "find_replace", "find": "<<CERT_TYPE>>", "value_path": "teacher_cert[0].cert_type" },
+    { "type": "find_replace", "find": "<<CERT_SUBJECT>>", "value_path": "teacher_cert[0].cert_subject" },
+    { "type": "find_replace", "find": "<<EDU1_SCHOOL>>", "value_path": "education[0].school" },
+    { "type": "find_replace", "find": "<<EDU1_MAJOR>>", "value_path": "education[0].major" },
+    { "type": "find_replace", "find": "<<CAREER1_INST>>", "value_path": "career[0].institution" },
+    { "type": "find_replace", "find": "<<CAREER1_SUBJECT>>", "value_path": "career[0].subject" },
+    { "type": "find_replace", "find": "<<SELF_INTRO>>", "value_path": "cover_letter.self_intro" },
+    { "type": "find_replace", "find": "<<MOTIVATION>>", "value_path": "cover_letter.motivation" },
+    { "type": "find_replace", "find": "<<MILITARY>>", "value_path": "military.status", "fallback": "해당없음" }
   ]
 }
