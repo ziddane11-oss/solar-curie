@@ -1,0 +1,42 @@
+.nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e5e7f0;
+  padding: 0 4px;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #8b90a7;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab:hover {
+  color: #343747;
+}
+
+.active {
+  color: #2f3dd8;
+  border-bottom-color: #2f3dd8;
+}
+
+.badge {
+  background: #eef0ff;
+  color: #2f3dd8;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-weight: 600;
+}

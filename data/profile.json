@@ -1,26 +1,61 @@
 {
-  "person": {
+  "version": 2,
+  "personal": {
     "name": "",
+    "name_hanja": "",
     "birth": "",
+    "gender": "",
     "phone": "",
+    "phone_secondary": "",
     "email": "",
-    "address": ""
+    "address": "",
+    "address_detail": "",
+    "postal_code": ""
   },
+  "teacher_cert": [
+    {
+      "cert_type": "",
+      "cert_subject": "",
+      "cert_number": "",
+      "cert_date": "",
+      "issuer": ""
+    }
+  ],
+  "other_certs": [],
   "education": [
     {
       "school": "",
       "major": "",
-      "period": "",
-      "degree": ""
+      "degree": "",
+      "status": "",
+      "start_date": "",
+      "end_date": "",
+      "thesis_title": ""
     }
   ],
   "career": [
     {
-      "school": "",
-      "period": "",
+      "institution": "",
+      "position": "",
       "subject": "",
-      "role": "",
+      "start_date": "",
+      "end_date": "",
+      "is_contract": true,
+      "total_months": 0,
       "notes": ""
     }
-  ]
+  ],
+  "military": {
+    "status": "",
+    "branch": "",
+    "rank": "",
+    "start_date": "",
+    "end_date": ""
+  },
+  "additional": {
+    "disability": "",
+    "veteran": "",
+    "multi_cultural": false,
+    "custom_fields": []
+  }
 }

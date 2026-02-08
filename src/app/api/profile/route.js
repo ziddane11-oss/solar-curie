@@ -5,22 +5,25 @@ import { dataDir, profilePath } from '@/lib/paths';
 export const runtime = 'nodejs';
 
 const defaultProfile = {
-  person: {
-    name: '',
-    birth: '',
-    phone: '',
-    email: '',
-    address: ''
+  version: 2,
+  personal: {
+    name: '', name_hanja: '', birth: '', gender: '',
+    phone: '', phone_secondary: '', email: '',
+    address: '', address_detail: '', postal_code: '',
   },
-  education: [{ school: '', major: '', period: '', degree: '' }],
-  career: [{ school: '', period: '', subject: '', role: '', notes: '' }]
+  teacher_cert: [{ cert_type: '', cert_subject: '', cert_number: '', cert_date: '', issuer: '' }],
+  other_certs: [],
+  education: [{ school: '', major: '', degree: '', status: '', start_date: '', end_date: '', thesis_title: '' }],
+  career: [{ institution: '', position: '', subject: '', start_date: '', end_date: '', is_contract: true, total_months: 0, notes: '' }],
+  military: { status: '', branch: '', rank: '', start_date: '', end_date: '' },
+  additional: { disability: '', veteran: '', multi_cultural: false, custom_fields: [] },
 };
 
 export async function GET() {
   try {
     const data = await fs.readFile(profilePath, 'utf-8');
     return NextResponse.json({ profile: JSON.parse(data) });
-  } catch (error) {
+  } catch {
     await fs.mkdir(dataDir, { recursive: true });
     await fs.writeFile(profilePath, JSON.stringify(defaultProfile, null, 2), 'utf-8');
     return NextResponse.json({ profile: defaultProfile });
@@ -36,7 +39,7 @@ export async function PUT(request) {
     await fs.writeFile(profilePath, JSON.stringify(profile, null, 2), 'utf-8');
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: 'Invalid profile payload.' }, { status: 400 });
   }
 }

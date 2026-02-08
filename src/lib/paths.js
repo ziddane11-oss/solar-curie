@@ -7,6 +7,7 @@ export const outputDir = path.join(repoRoot, 'output');
 export const scriptsDir = path.join(repoRoot, 'scripts');
 
 export const profilePath = path.join(dataDir, 'profile.json');
+export const coverLetterPath = path.join(dataDir, 'cover_letter.json');
 export const yearPath = path.join(dataDir, 'year.json');
 
 export const mapPathForTemplate = (templateId) =>
