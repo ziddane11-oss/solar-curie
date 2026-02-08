@@ -260,7 +260,7 @@ export default function Home() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>기간제 교사 지원서 자동 생성기</h1>
+          <h1>지원서작성기</h1>
           <p>프로필 입력 → 자기소개서 작성 → PDF 자동 생성</p>
         </div>
         <div className={styles.headerActions}>
