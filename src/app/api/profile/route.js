@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import { dataDir, profilePath } from '@/lib/paths';
-import type { Profile } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
-const defaultProfile: Profile = {
+const defaultProfile = {
   person: {
     name: '',
     birth: '',
@@ -28,10 +27,10 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request) {
   try {
     const body = await request.json();
-    const profile = body.profile as Profile;
+    const profile = body.profile;
 
     await fs.mkdir(dataDir, { recursive: true });
     await fs.writeFile(profilePath, JSON.stringify(profile, null, 2), 'utf-8');

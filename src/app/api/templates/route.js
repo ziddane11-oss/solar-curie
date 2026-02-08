@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { templatesDir } from '@/lib/paths';
-import type { TemplateMap } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
@@ -16,7 +15,7 @@ export async function GET() {
       const mapPath = path.join(templatesDir, entry.name, 'map.json');
       try {
         const data = await fs.readFile(mapPath, 'utf-8');
-        const map = JSON.parse(data) as TemplateMap;
+        const map = JSON.parse(data);
         templates.push({
           id: entry.name,
           name: map.template_name || map.template_id || entry.name,

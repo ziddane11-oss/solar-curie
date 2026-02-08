@@ -7,7 +7,7 @@ import { isAllowedTemplateFile, sanitizeTemplateId } from '@/lib/validate';
 
 export const runtime = 'nodejs';
 
-const readLog = async (logPath: string) => {
+const readLog = async (logPath) => {
   try {
     return await fs.readFile(logPath, 'utf-8');
   } catch (error) {
@@ -15,7 +15,7 @@ const readLog = async (logPath: string) => {
   }
 };
 
-export async function GET(request: Request) {
+export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const jobId = searchParams.get('jobId');
 
@@ -37,11 +37,11 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request) {
   try {
     const formData = await request.formData();
     const templateId = sanitizeTemplateId(String(formData.get('template_id') || ''));
-    const file = formData.get('file') as File | null;
+    const file = formData.get('file');
 
     if (!templateId) {
       return NextResponse.json({ success: false, error: 'template_id is required.' }, { status: 400 });
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       output += data.toString();
     });
 
-    const exitCode: number = await new Promise((resolve) => {
+    const exitCode = await new Promise((resolve) => {
       pythonProcess.on('close', (code) => resolve(code ?? 1));
     });
 

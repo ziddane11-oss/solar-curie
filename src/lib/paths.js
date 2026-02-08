@@ -9,8 +9,8 @@ export const scriptsDir = path.join(repoRoot, 'scripts');
 export const profilePath = path.join(dataDir, 'profile.json');
 export const yearPath = path.join(dataDir, 'year.json');
 
-export const mapPathForTemplate = (templateId: string) =>
+export const mapPathForTemplate = (templateId) =>
   path.join(templatesDir, templateId, 'map.json');
 
-export const templateSamplePath = (templateId: string, extension: string) =>
+export const templateSamplePath = (templateId, extension) =>
   path.join(templatesDir, templateId, `sample.${extension}`);

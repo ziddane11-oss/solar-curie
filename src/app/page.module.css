@@ -84,7 +84,7 @@
   background: #f8f8ff;
 }
 
-label {
+.panel label {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -92,8 +92,8 @@ label {
   color: #343747;
 }
 
-input,
-select {
+.panel input,
+.panel select {
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid #d8dbe8;
