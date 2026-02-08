@@ -1,0 +1,26 @@
+{
+  "person": {
+    "name": "",
+    "birth": "",
+    "phone": "",
+    "email": "",
+    "address": ""
+  },
+  "education": [
+    {
+      "school": "",
+      "major": "",
+      "period": "",
+      "degree": ""
+    }
+  ],
+  "career": [
+    {
+      "school": "",
+      "period": "",
+      "subject": "",
+      "role": "",
+      "notes": ""
+    }
+  ]
+}

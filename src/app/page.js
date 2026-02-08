@@ -1,550 +1,343 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import FloatingText from '@/components/FloatingText';
-import BlackHole from '@/components/BlackHole';
-import { getRemainingUses, getDailyLimit, canUse, useOneCredit, getResetTime, getHistoryCount } from '@/lib/usageTracker';
+import { useEffect, useMemo, useState } from 'react';
+import styles from './page.module.css';
 
-// Pre-generated star positions to avoid hydration mismatch
-const generateStars = (count) => {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    left: `${(i * 17 + 23) % 100}%`,
-    top: `${(i * 31 + 11) % 100}%`,
-    size: 1 + (i % 3),
-    opacity: 0.3 + ((i * 7) % 70) / 100,
-    duration: 2 + (i % 3),
-    delay: (i % 20) / 10
-  }));
+const emptyProfile = {
+  person: {
+    name: '',
+    birth: '',
+    phone: '',
+    email: '',
+    address: ''
+  },
+  education: [{ school: '', major: '', period: '', degree: '' }],
+  career: [{ school: '', period: '', subject: '', role: '', notes: '' }]
 };
 
-const STARS = generateStars(50);
-
 export default function Home() {
-  const router = useRouter();
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showBlackHole, setShowBlackHole] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [remaining, setRemaining] = useState(3);
-  const [limit, setLimit] = useState(3);
-  const [showLimitModal, setShowLimitModal] = useState(false);
-  const [historyCount, setHistoryCount] = useState(0);
-  const [inputMode, setInputMode] = useState('screenshot'); // screenshot or text
-  const [chatText, setChatText] = useState('');
-  const [loadingMessage, setLoadingMessage] = useState('');
-
-  // Loading messages for credibility illusion
-  const loadingMessages = [
-    `유사 대화 ${1000 + Math.floor(Math.random() * 500)}건 비교 중…`,
-    "상대 반응 패턴 매칭 중…",
-    "실수 포인트 검사 중…",
-    "보내기 위험도 계산 중…"
-  ];
+  const [profile, setProfile] = useState(emptyProfile);
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [file, setFile] = useState(null);
+  const [status, setStatus] = useState('');
+  const [log, setLog] = useState('');
+  const [downloadUrl, setDownloadUrl] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    setRemaining(getRemainingUses());
-    setLimit(getDailyLimit());
-    setHistoryCount(getHistoryCount());
-  }, []);
-
-  // Rotate loading messages
-  useEffect(() => {
-    if (!isLoading) return;
-
-    let index = 0;
-    setLoadingMessage(loadingMessages[0]);
-
-    const interval = setInterval(() => {
-      index = (index + 1) % loadingMessages.length;
-      setLoadingMessage(loadingMessages[index]);
-    }, 1200);
-
-    return () => clearInterval(interval);
-  }, [isLoading]);
-
-  const handleAnalyze = useCallback(async (file) => {
-    if (!file) return;
-
-    if (!canUse()) {
-      setShowLimitModal(true);
-      return;
-    }
-
-    useOneCredit();
-    setRemaining(getRemainingUses());
-    setIsLoading(true);
-
-    try {
-      // 이미지를 FormData로 변환
-      const formData = new FormData();
-      formData.append('image', file);
-
-      // API 호출하여 텍스트 추출
-      const response = await fetch('/api/analyze-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.chatText) {
-        // 추출된 텍스트를 localStorage에 저장 (분석 엔진이 사용)
-        localStorage.setItem('tc_chat_input', data.chatText);
-      } else {
-        console.warn('[OCR 실패] 랜덤 결과 사용:', data.error);
-        // 실패 시 localStorage 제거 (랜덤 결과 생성)
-        localStorage.removeItem('tc_chat_input');
+    const loadProfile = async () => {
+      const response = await fetch('/api/profile');
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data.profile || emptyProfile);
       }
-    } catch (error) {
-      console.error('[API 호출 실패]', error);
-      // 오류 시에도 랜덤 결과 생성
-      localStorage.removeItem('tc_chat_input');
-    }
+    };
 
-    // 블랙홀 애니메이션 시작
-    setShowBlackHole(true);
+    const loadTemplates = async () => {
+      const response = await fetch('/api/templates');
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(data.templates || []);
+        if (data.templates?.length) {
+          setSelectedTemplate(data.templates[0].id);
+        }
+      }
+    };
+
+    loadProfile();
+    loadTemplates();
   }, []);
 
-  const handleBlackHoleEnd = useCallback(() => {
-    router.push('/result');
-  }, [router]);
+  const handlePersonChange = (field, value) => {
+    setProfile((prev) => ({
+      ...prev,
+      person: {
+        ...prev.person,
+        [field]: value
+      }
+    }));
+  };
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(false);
+  const handleEducationChange = (index, field, value) => {
+    setProfile((prev) => {
+      const education = [...prev.education];
+      education[index] = { ...education[index], [field]: value };
+      return { ...prev, education };
+    });
+  };
 
-    const file = e.dataTransfer?.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      handleAnalyze(file);
+  const handleCareerChange = (index, field, value) => {
+    setProfile((prev) => {
+      const career = [...prev.career];
+      career[index] = { ...career[index], [field]: value };
+      return { ...prev, career };
+    });
+  };
+
+  const handleAddEducation = () => {
+    setProfile((prev) => ({
+      ...prev,
+      education: [...prev.education, { school: '', major: '', period: '', degree: '' }]
+    }));
+  };
+
+  const handleAddCareer = () => {
+    setProfile((prev) => ({
+      ...prev,
+      career: [...prev.career, { school: '', period: '', subject: '', role: '', notes: '' }]
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    setStatus('프로필 저장 중...');
+    const response = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile })
+    });
+    setIsSaving(false);
+    if (response.ok) {
+      setStatus('프로필 저장 완료');
+    } else {
+      setStatus('프로필 저장 실패');
     }
-  }, [handleAnalyze]);
+  };
 
-  const handleFileChange = useCallback((e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleAnalyze(file);
+  const handleGenerate = async () => {
+    if (!file) {
+      setStatus('파일을 선택해 주세요.');
+      return;
     }
-  }, [handleAnalyze]);
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
-
-  const handleDemoClick = useCallback(() => {
-    if (!canUse()) {
-      setShowLimitModal(true);
+    if (!selectedTemplate) {
+      setStatus('템플릿을 선택해 주세요.');
       return;
     }
 
-    // 데모 모드: 저장된 대화 내용 제거 (랜덤 결과 생성)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('tc_chat_input');
+    setIsGenerating(true);
+    setStatus('PDF 생성 중...');
+    setDownloadUrl('');
+    setLog('');
+
+    const formData = new FormData();
+    formData.append('template_id', selectedTemplate);
+    formData.append('file', file);
+
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+    setIsGenerating(false);
+
+    if (response.ok && data.success) {
+      setStatus('PDF 생성 완료');
+      setDownloadUrl(data.downloadUrl);
+      setLog(data.log || '');
+    } else {
+      setStatus('PDF 생성 실패');
+      setLog(data.log || data.error || '알 수 없는 오류');
     }
+  };
 
-    useOneCredit();
-    setRemaining(getRemainingUses());
-    setIsLoading(true);
-    setShowBlackHole(true);
-  }, []);
-
-  const handleTextAnalyze = useCallback(() => {
-    if (!chatText.trim()) {
-      alert('대화 내용을 붙여넣어주세요!');
-      return;
-    }
-
-    if (!canUse()) {
-      setShowLimitModal(true);
-      return;
-    }
-
-    // 대화 내용 저장 (분석 엔진에서 사용)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('tc_chat_input', chatText);
-    }
-
-    useOneCredit();
-    setRemaining(getRemainingUses());
-    setIsLoading(true);
-    setShowBlackHole(true);
-  }, [chatText]);
+  const templateOptions = useMemo(() => {
+    return templates.map((template) => (
+      <option key={template.id} value={template.id}>
+        {template.name || template.id}
+      </option>
+    ));
+  }, [templates]);
 
   return (
-    <main className="main-container">
-      {/* Background stars effect */}
-      <div className="stars-container">
-        {mounted && STARS.map((star) => (
-          <div
-            key={star.id}
-            style={{
-              position: 'absolute',
-              left: star.left,
-              top: star.top,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-              background: 'white',
-              borderRadius: '50%',
-              opacity: star.opacity,
-              animation: `twinkle ${star.duration}s ease-in-out infinite`,
-              animationDelay: `${star.delay}s`
-            }}
-          />
-        ))}
-      </div>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div>
+          <h1>기간제 교사 지원서 자동 생성기</h1>
+          <p>한글 양식 업로드 → 자동 채움 → PDF 다운로드</p>
+        </div>
+        <div className={styles.status}>{status}</div>
+      </header>
 
-      {/* Daily usage counter */}
-      {mounted && !isLoading && (
-        <div className="usage-counter">
-          <div className="usage-badge">
-            <span className="usage-icon">🎫</span>
-            <span className="usage-text">오늘 무료 <strong>{remaining}</strong>/{limit}회</span>
-          </div>
-          {historyCount > 0 && (
-            <div className="history-badge" onClick={() => alert('🔒 히스토리 기능 준비중!')}>
-              <span>📋 내 판정 {historyCount}개</span>
+      <main className={styles.main}>
+        <section className={styles.panel}>
+          <h2>기본 정보 (profile.json)</h2>
+          <div className={styles.section}>
+            <h3>인적사항</h3>
+            <div className={styles.grid}>
+              <label>
+                이름
+                <input
+                  value={profile.person.name}
+                  onChange={(event) => handlePersonChange('name', event.target.value)}
+                />
+              </label>
+              <label>
+                생년월일
+                <input
+                  value={profile.person.birth}
+                  onChange={(event) => handlePersonChange('birth', event.target.value)}
+                />
+              </label>
+              <label>
+                휴대폰
+                <input
+                  value={profile.person.phone}
+                  onChange={(event) => handlePersonChange('phone', event.target.value)}
+                />
+              </label>
+              <label>
+                이메일
+                <input
+                  value={profile.person.email}
+                  onChange={(event) => handlePersonChange('email', event.target.value)}
+                />
+              </label>
+              <label className={styles.full}>
+                주소
+                <input
+                  value={profile.person.address}
+                  onChange={(event) => handlePersonChange('address', event.target.value)}
+                />
+              </label>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Floating neon title */}
-      {!isLoading && <FloatingText text="톡을 던져봐" subtext="Drop Here" />}
-
-      {/* Input mode toggle */}
-      {!isLoading && (
-        <div className="input-mode-toggle">
-          <button
-            className={`mode-btn ${inputMode === 'screenshot' ? 'active' : ''}`}
-            onClick={() => setInputMode('screenshot')}
-          >
-            📷 스크린샷
-          </button>
-          <button
-            className={`mode-btn ${inputMode === 'text' ? 'active' : ''}`}
-            onClick={() => setInputMode('text')}
-          >
-            📝 텍스트
-          </button>
-        </div>
-      )}
-
-      {/* Screenshot Upload zone */}
-      {!isLoading && inputMode === 'screenshot' && (
-        <div
-          className={`upload-zone ${isDragOver ? 'drag-over' : ''}`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            id="file-upload"
-          />
-          <div className="upload-icon">📱</div>
-          <div className="upload-text">카톡 스크린샷을 여기에 던져!</div>
-          <div style={{ fontSize: '0.9rem', opacity: 0.5 }}>
-            또는 클릭해서 선택
           </div>
-        </div>
-      )}
 
-      {/* Text paste zone */}
-      {!isLoading && inputMode === 'text' && (
-        <div className="text-input-zone">
-          <textarea
-            className="chat-textarea"
-            placeholder="대화 내용을 복사해서 붙여넣기 해봐!&#10;&#10;예시:&#10;상대: 뭐해?&#10;나: 밥먹음&#10;상대: ㅋㅋ 뭐먹어&#10;나: 치킨..."
-            value={chatText}
-            onChange={(e) => setChatText(e.target.value)}
-          />
-          <button
-            className="analyze-btn"
-            onClick={handleTextAnalyze}
-            disabled={!chatText.trim()}
-          >
-            🔥 분석하기
-          </button>
-          <div className="text-hint">
-            💡 카톡에서 대화 선택 → 복사 → 여기에 붙여넣기
-          </div>
-        </div>
-      )}
-
-      {/* Demo button */}
-      {!isLoading && (
-        <button onClick={handleDemoClick} className="demo-btn">
-          🎲 데모 체험하기
-        </button>
-      )}
-
-      {/* Trust message - reduces bounce rate 20-30% */}
-      {!isLoading && (
-        <div className="trust-message">
-          🔓 로그인 없이 바로 가능
-        </div>
-      )}
-
-      {/* Loading state with rotating messages */}
-      {isLoading && !showBlackHole && (
-        <div className="loading-container">
-          <div className="loading-spinner" />
-          <div className="loading-message">{loadingMessage}</div>
-        </div>
-      )}
-
-      {/* Black hole animation */}
-      <BlackHole isActive={showBlackHole} onAnimationEnd={handleBlackHoleEnd} />
-
-      {/* Limit reached modal */}
-      {showLimitModal && (
-        <div className="limit-modal-overlay" onClick={() => setShowLimitModal(false)}>
-          <div className="limit-modal" onClick={e => e.stopPropagation()}>
-            <div className="limit-emoji">🔒</div>
-            <h2>오늘 무료 분석 다 씀</h2>
-            <p className="limit-reason">지금은 고위험 멘트라 무료에선 숨김</p>
-            <p className="limit-offer">공유하면 +1회 바로 지급함</p>
-
-            <div className="limit-options">
-              <button className="share-bonus-btn" onClick={() => {
-                alert('공유하기 버튼 클릭하면 +1회 지급됨!');
-                setShowLimitModal(false);
-              }}>
-                공유하고 +1 받기
-              </button>
-              <button className="close-btn" onClick={() => setShowLimitModal(false)}>
-                내일 다시 하기
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h3>학력</h3>
+              <button type="button" onClick={handleAddEducation}>
+                + 항목 추가
               </button>
             </div>
-            <p className="limit-note">하루 최대 2회까지</p>
+            {profile.education.map((entry, index) => (
+              <div key={`edu-${index}`} className={styles.card}>
+                <label>
+                  학교
+                  <input
+                    value={entry.school}
+                    onChange={(event) => handleEducationChange(index, 'school', event.target.value)}
+                  />
+                </label>
+                <label>
+                  전공
+                  <input
+                    value={entry.major}
+                    onChange={(event) => handleEducationChange(index, 'major', event.target.value)}
+                  />
+                </label>
+                <label>
+                  기간
+                  <input
+                    value={entry.period}
+                    onChange={(event) => handleEducationChange(index, 'period', event.target.value)}
+                  />
+                </label>
+                <label>
+                  학위
+                  <input
+                    value={entry.degree}
+                    onChange={(event) => handleEducationChange(index, 'degree', event.target.value)}
+                  />
+                </label>
+              </div>
+            ))}
           </div>
-        </div>
-      )}
 
-      <style jsx>{`
-        .usage-counter {
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          z-index: 50;
-        }
-        .usage-badge {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: rgba(0, 0, 0, 0.6);
-          border: 1px solid rgba(255, 0, 153, 0.3);
-          border-radius: 20px;
-          padding: 8px 16px;
-          backdrop-filter: blur(10px);
-        }
-        .usage-icon {
-          font-size: 1.2rem;
-        }
-        .usage-text {
-          font-size: 0.85rem;
-          color: #fff;
-        }
-        .usage-text strong {
-          color: #ff0099;
-          font-size: 1.1rem;
-        }
-        .history-badge {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(255, 215, 0, 0.1);
-          border: 1px solid rgba(255, 215, 0, 0.3);
-          border-radius: 15px;
-          padding: 6px 12px;
-          font-size: 0.75rem;
-          color: #ffd700;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .history-badge:hover {
-          background: rgba(255, 215, 0, 0.2);
-        }
-        .limit-modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.8);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 100;
-          backdrop-filter: blur(5px);
-        }
-        .limit-modal {
-          background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
-          border: 2px solid #ff0099;
-          border-radius: 20px;
-          padding: 30px;
-          text-align: center;
-          max-width: 320px;
-          box-shadow: 0 0 40px rgba(255, 0, 153, 0.3);
-        }
-        .limit-emoji {
-          font-size: 4rem;
-          margin-bottom: 10px;
-        }
-        .limit-modal h2 {
-          color: #ff0099;
-          margin-bottom: 10px;
-        }
-        .limit-modal p {
-          color: rgba(255, 255, 255, 0.7);
-          margin-bottom: 5px;
-        }
-        .reset-time {
-          color: #ffd700;
-          font-weight: bold;
-          font-size: 1.1rem;
-          margin: 15px 0;
-        }
-        .limit-options {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          margin-top: 20px;
-        }
-        .share-bonus-btn {
-          background: linear-gradient(135deg, #39ff14, #00ff88);
-          border: none;
-          border-radius: 25px;
-          padding: 15px 25px;
-          color: #000;
-          font-weight: bold;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: transform 0.2s;
-        }
-        .share-bonus-btn:hover {
-          transform: scale(1.05);
-        }
-        .close-btn {
-          background: transparent;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          border-radius: 20px;
-          padding: 10px 20px;
-          color: rgba(255, 255, 255, 0.6);
-          cursor: pointer;
-        }
-        .input-mode-toggle {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 20px;
-          z-index: 10;
-        }
-        .mode-btn {
-          padding: 10px 20px;
-          border: 2px solid rgba(255, 0, 153, 0.3);
-          border-radius: 25px;
-          background: rgba(0, 0, 0, 0.5);
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 0.9rem;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        .mode-btn.active {
-          border-color: #ff0099;
-          color: #ff0099;
-          background: rgba(255, 0, 153, 0.15);
-        }
-        .mode-btn:hover {
-          border-color: #ff0099;
-        }
-        .text-input-zone {
-          width: 85%;
-          max-width: 450px;
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-          z-index: 10;
-        }
-        .chat-textarea {
-          width: 100%;
-          height: 180px;
-          padding: 15px;
-          border: 2px solid rgba(255, 0, 153, 0.3);
-          border-radius: 15px;
-          background: rgba(0, 0, 0, 0.6);
-          color: #fff;
-          font-size: 0.95rem;
-          line-height: 1.5;
-          resize: none;
-          outline: none;
-          transition: border-color 0.3s;
-        }
-        .chat-textarea::placeholder {
-          color: rgba(255, 255, 255, 0.4);
-        }
-        .chat-textarea:focus {
-          border-color: #ff0099;
-        }
-        .analyze-btn {
-          padding: 15px 30px;
-          border: none;
-          border-radius: 30px;
-          background: linear-gradient(135deg, #ff0099, #ff6b9d);
-          color: white;
-          font-size: 1.1rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 0 20px rgba(255, 0, 153, 0.4);
-        }
-        .analyze-btn:hover:not(:disabled) {
-          transform: scale(1.05);
-          box-shadow: 0 0 30px rgba(255, 0, 153, 0.6);
-        }
-        .analyze-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        .text-hint {
-          text-align: center;
-          font-size: 0.8rem;
-          color: rgba(255, 255, 255, 0.5);
-        }
-        .trust-message {
-          margin-top: 20px;
-          padding: 8px 16px;
-          background: rgba(57, 255, 20, 0.1);
-          border: 1px solid rgba(57, 255, 20, 0.3);
-          border-radius: 20px;
-          font-size: 0.85rem;
-          color: #39ff14;
-          z-index: 10;
-        }
-        .loading-message {
-          color: var(--neon-pink);
-          font-size: 1rem;
-          animation: fadeInOut 1.2s ease-in-out;
-        }
-        @keyframes fadeInOut {
-          0% { opacity: 0; transform: translateY(5px); }
-          20% { opacity: 1; transform: translateY(0); }
-          80% { opacity: 1; transform: translateY(0); }
-          100% { opacity: 0; transform: translateY(-5px); }
-        }
-      `}</style>
-    </main>
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h3>경력</h3>
+              <button type="button" onClick={handleAddCareer}>
+                + 항목 추가
+              </button>
+            </div>
+            {profile.career.map((entry, index) => (
+              <div key={`career-${index}`} className={styles.card}>
+                <label>
+                  학교/기관
+                  <input
+                    value={entry.school}
+                    onChange={(event) => handleCareerChange(index, 'school', event.target.value)}
+                  />
+                </label>
+                <label>
+                  기간
+                  <input
+                    value={entry.period}
+                    onChange={(event) => handleCareerChange(index, 'period', event.target.value)}
+                  />
+                </label>
+                <label>
+                  과목
+                  <input
+                    value={entry.subject}
+                    onChange={(event) => handleCareerChange(index, 'subject', event.target.value)}
+                  />
+                </label>
+                <label>
+                  역할
+                  <input
+                    value={entry.role}
+                    onChange={(event) => handleCareerChange(index, 'role', event.target.value)}
+                  />
+                </label>
+                <label className={styles.full}>
+                  특이사항
+                  <input
+                    value={entry.notes}
+                    onChange={(event) => handleCareerChange(index, 'notes', event.target.value)}
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+
+          <button className={styles.primary} type="button" onClick={handleSaveProfile} disabled={isSaving}>
+            {isSaving ? '저장 중...' : '프로필 저장'}
+          </button>
+        </section>
+
+        <section className={styles.panel}>
+          <h2>PDF 생성</h2>
+          <div className={styles.section}>
+            <label>
+              템플릿 선택
+              <select value={selectedTemplate} onChange={(event) => setSelectedTemplate(event.target.value)}>
+                {templateOptions}
+              </select>
+            </label>
+            <label>
+              지원서 파일 업로드 (.hwp/.hwpx)
+              <input
+                type="file"
+                accept=".hwp,.hwpx"
+                onChange={(event) => setFile(event.target.files?.[0] || null)}
+              />
+            </label>
+          </div>
+          <button className={styles.primary} type="button" onClick={handleGenerate} disabled={isGenerating}>
+            {isGenerating ? '생성 중...' : 'PDF 생성'}
+          </button>
+
+          <div className={styles.section}>
+            <h3>결과</h3>
+            {downloadUrl ? (
+              <a className={styles.download} href={downloadUrl}>
+                result.pdf 다운로드
+              </a>
+            ) : (
+              <p className={styles.muted}>아직 생성된 PDF가 없습니다.</p>
+            )}
+          </div>
+
+          <div className={styles.section}>
+            <h3>로그</h3>
+            <pre className={styles.log}>{log || '로그가 아직 없습니다.'}</pre>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }
