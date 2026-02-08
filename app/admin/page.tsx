@@ -50,7 +50,7 @@ export default function AdminPage() {
         const data = await res.json();
         setArticles(data.articles || []);
       } else if (res.status === 401) {
-        sessionStorage.removeItem('adminToken');
+        localStorage.removeItem('adminToken');
         setAuthenticated(false);
       }
     } finally {
@@ -75,7 +75,7 @@ export default function AdminPage() {
   useEffect(() => {
     const saved =
       typeof window !== 'undefined'
-        ? sessionStorage.getItem('adminToken')
+        ? localStorage.getItem('adminToken')
         : null;
     if (saved) {
       setAdminToken(saved);
@@ -121,11 +121,11 @@ export default function AdminPage() {
         headers: { 'x-admin-token': adminToken },
       });
       if (res.ok) {
-        sessionStorage.setItem('adminToken', adminToken);
+        localStorage.setItem('adminToken', adminToken);
         setAuthenticated(true);
       } else if (res.status === 401) {
         setAuthError('토큰이 올바르지 않습니다.');
-        sessionStorage.removeItem('adminToken');
+        localStorage.removeItem('adminToken');
       } else {
         setAuthError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       }
@@ -136,24 +136,39 @@ export default function AdminPage() {
     }
   }
 
+  function handleLogout() {
+    localStorage.removeItem('adminToken');
+    setAdminToken('');
+    setAuthenticated(false);
+    setStats(null);
+    setArticles([]);
+  }
+
   if (!authenticated) {
     return (
-      <div className="max-w-md mx-auto px-4 py-20">
-        <h1 className="text-2xl font-bold mb-6">Admin 로그인</h1>
-        <form onSubmit={handleAuth} className="space-y-4">
-          <Input
-            type="password"
-            placeholder="Admin Token"
-            value={adminToken}
-            onChange={(e) => setAdminToken(e.target.value)}
-          />
-          {authError && (
-            <p className="text-sm text-red-600">{authError}</p>
-          )}
-          <Button type="submit" className="w-full" disabled={authLoading || !adminToken}>
-            {authLoading ? '확인 중...' : '접속'}
-          </Button>
-        </form>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle className="text-center">관리자 로그인</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAuth} className="space-y-4">
+              <Input
+                type="password"
+                placeholder="비밀번호 입력"
+                value={adminToken}
+                onChange={(e) => setAdminToken(e.target.value)}
+                autoFocus
+              />
+              {authError && (
+                <p className="text-sm text-red-600">{authError}</p>
+              )}
+              <Button type="submit" className="w-full" disabled={authLoading || !adminToken}>
+                {authLoading ? '확인 중...' : '로그인'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -162,9 +177,14 @@ export default function AdminPage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <Button onClick={handleIngest} disabled={ingesting}>
-          {ingesting ? 'RSS 수집 중...' : 'RSS 수집'}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleIngest} disabled={ingesting}>
+            {ingesting ? 'RSS 수집 중...' : 'RSS 수집'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            로그아웃
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}
