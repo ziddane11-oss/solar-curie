@@ -127,34 +127,41 @@ export default function TeacherPackForm({ teacherPack, onChange }) {
         </label>
       </div>
 
-      {/* 지원 학교 정보 */}
-      <h3 className={styles.sectionTitle} style={{ marginTop: 24 }}>지원 학교 정보</h3>
-      <div className={styles.grid}>
-        <label>
-          학교명
-          <input type="text" value={tp.school_target.school_name} onChange={(e) => update('school_target.school_name', e.target.value)} />
-        </label>
-        <label>
-          교과/부서
-          <input type="text" value={tp.school_target.department} onChange={(e) => update('school_target.department', e.target.value)} />
-        </label>
-        <label className={styles.full}>
-          담당 업무
-          <input type="text" value={tp.school_target.tasks} onChange={(e) => update('school_target.tasks', e.target.value)} />
-        </label>
-        <label className={styles.full}>
-          계약 사유
-          <input type="text" value={tp.school_target.contract_reason} onChange={(e) => update('school_target.contract_reason', e.target.value)} placeholder="예: 산전후 휴가 대체" />
-        </label>
-        <label>
-          계약 시작일
-          <input type="date" value={tp.school_target.contract_start} onChange={(e) => update('school_target.contract_start', e.target.value)} />
-        </label>
-        <label>
-          계약 종료일
-          <input type="date" value={tp.school_target.contract_end} onChange={(e) => update('school_target.contract_end', e.target.value)} />
-        </label>
-      </div>
+      {/* 지원 학교 정보 (고급/선택) — collapsed by default */}
+      <details className={styles.advancedDetails}>
+        <summary className={styles.advancedSummary}>
+          지원 학교 정보(고급/선택)
+        </summary>
+        <p className={styles.muted} style={{ margin: '8px 0 12px' }}>
+          일부 양식에서만 필요합니다. 대부분은 학교가 기재합니다.
+        </p>
+        <div className={styles.grid}>
+          <label>
+            학교명
+            <input type="text" value={tp.school_target.school_name} onChange={(e) => update('school_target.school_name', e.target.value)} />
+          </label>
+          <label>
+            교과/부서
+            <input type="text" value={tp.school_target.department} onChange={(e) => update('school_target.department', e.target.value)} />
+          </label>
+          <label className={styles.full}>
+            담당 업무
+            <input type="text" value={tp.school_target.tasks} onChange={(e) => update('school_target.tasks', e.target.value)} />
+          </label>
+          <label className={styles.full}>
+            계약 사유
+            <input type="text" value={tp.school_target.contract_reason} onChange={(e) => update('school_target.contract_reason', e.target.value)} placeholder="예: 산전후 휴가 대체" />
+          </label>
+          <label>
+            계약 시작일
+            <input type="date" value={tp.school_target.contract_start} onChange={(e) => update('school_target.contract_start', e.target.value)} />
+          </label>
+          <label>
+            계약 종료일
+            <input type="date" value={tp.school_target.contract_end} onChange={(e) => update('school_target.contract_end', e.target.value)} />
+          </label>
+        </div>
+      </details>
     </div>
   );
 }
