@@ -208,20 +208,26 @@ export default function Home() {
     }
   };
 
+  // Lightweight completion checks (visual only, no validation)
+  const personalComplete = !!(profile.personal.name && profile.personal.phone);
+  const educationComplete = profile.education?.some((e) => e.school && e.major);
+  const careerComplete = profile.career?.some((c) => c.institution);
+  const militaryComplete = !!profile.military.status;
+
   const renderTab = () => {
     switch (activeTab) {
       case 'basic':
         return (
           <>
             <OnboardingCard />
-            <PersonalInfoForm data={profile.personal} onChange={(v) => updateProfile('personal', v)} />
-            <div style={{ height: 24 }} />
-            <EducationForm items={profile.education} onChange={(v) => updateProfile('education', v)} />
-            <div style={{ height: 24 }} />
-            <CareerForm items={profile.career} onChange={(v) => updateProfile('career', v)} />
-            <div style={{ height: 24 }} />
-            <MilitaryForm data={profile.military} onChange={(v) => updateProfile('military', v)} />
-            <div style={{ height: 24 }} />
+            <PersonalInfoForm data={profile.personal} complete={personalComplete} onChange={(v) => updateProfile('personal', v)} />
+            <div style={{ height: 28 }} />
+            <EducationForm items={profile.education} complete={educationComplete} onChange={(v) => updateProfile('education', v)} />
+            <div style={{ height: 28 }} />
+            <CareerForm items={profile.career} complete={careerComplete} onChange={(v) => updateProfile('career', v)} />
+            <div style={{ height: 28 }} />
+            <MilitaryForm data={profile.military} complete={militaryComplete} onChange={(v) => updateProfile('military', v)} />
+            <div style={{ height: 28 }} />
             <AdditionalForm
               data={{ disability: '', veteran: '', multi_cultural: false, custom_fields: profile.custom_fields || [] }}
               onChange={(v) => updateProfile('custom_fields', v.custom_fields || [])}

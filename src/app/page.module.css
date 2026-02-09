@@ -61,7 +61,7 @@
 
 /* ─── Container ──────────────────────────────────────────────── */
 .container {
-  max-width: 960px;
+  max-width: 1152px;
   margin: 0 auto;
   padding: 24px 48px 64px;
 }
@@ -70,7 +70,7 @@
 .main {
   background: #fff;
   border-radius: 0 0 16px 16px;
-  padding: 28px;
+  padding: 36px 40px;
   box-shadow: 0 10px 30px rgba(20, 20, 43, 0.06);
   min-height: 400px;
 }

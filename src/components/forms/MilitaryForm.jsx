@@ -1,10 +1,11 @@
 'use client';
 
+import SectionHeader from '../ui/SectionHeader';
 import styles from './Form.module.css';
 
 const STATUS_OPTIONS = ['', '필', '미필', '면제', '해당없음'];
 
-export default function MilitaryForm({ data, onChange }) {
+export default function MilitaryForm({ data, complete, onChange }) {
   const update = (field, value) => {
     onChange({ ...data, [field]: value });
   };
@@ -13,7 +14,7 @@ export default function MilitaryForm({ data, onChange }) {
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.sectionTitle}>병역사항</h3>
+      <SectionHeader title="병역사항" complete={complete} />
       <div className={styles.grid}>
         <label>
           병역 구분

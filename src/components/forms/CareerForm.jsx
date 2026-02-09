@@ -3,7 +3,7 @@
 import RepeatableSection from '../ui/RepeatableSection';
 import styles from './Form.module.css';
 
-export default function CareerForm({ items, onChange }) {
+export default function CareerForm({ items, complete, onChange }) {
   const update = (index, field, value) => {
     const next = [...items];
     next[index] = { ...next[index], [field]: value };
@@ -15,6 +15,7 @@ export default function CareerForm({ items, onChange }) {
       title="경력사항"
       items={items}
       addLabel="+ 경력 추가"
+      complete={complete}
       onAdd={() => onChange([...items, { institution: '', position: '', subject: '', start_date: '', end_date: '', is_contract: true, total_months: 0, notes: '' }])}
       onRemove={(i) => onChange(items.filter((_, idx) => idx !== i))}
       renderItem={(item, index) => (

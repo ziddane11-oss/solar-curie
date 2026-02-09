@@ -6,7 +6,7 @@ import styles from './Form.module.css';
 const DEGREE_OPTIONS = ['', '전문학사', '학사', '석사', '박사'];
 const STATUS_OPTIONS = ['', '졸업', '재학', '수료', '중퇴'];
 
-export default function EducationForm({ items, onChange }) {
+export default function EducationForm({ items, complete, onChange }) {
   const update = (index, field, value) => {
     const next = [...items];
     next[index] = { ...next[index], [field]: value };
@@ -18,6 +18,7 @@ export default function EducationForm({ items, onChange }) {
       title="학력"
       items={items}
       addLabel="+ 학력 추가"
+      complete={complete}
       onAdd={() => onChange([...items, { school: '', major: '', degree: '', status: '', start_date: '', end_date: '', thesis_title: '' }])}
       onRemove={(i) => onChange(items.filter((_, idx) => idx !== i))}
       renderItem={(item, index) => (

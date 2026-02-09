@@ -1,17 +1,18 @@
 'use client';
 
+import SectionHeader from '../ui/SectionHeader';
 import styles from './Form.module.css';
 
 const GENDER_OPTIONS = ['', '남', '여'];
 
-export default function PersonalInfoForm({ data, onChange }) {
+export default function PersonalInfoForm({ data, complete, onChange }) {
   const update = (field, value) => {
     onChange({ ...data, [field]: value });
   };
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.sectionTitle}>인적사항</h3>
+      <SectionHeader title="인적사항" complete={complete} />
       <div className={styles.grid}>
         <label className={styles.required}>
           이름

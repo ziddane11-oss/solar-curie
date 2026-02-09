@@ -1,11 +1,12 @@
 'use client';
 
+import SectionHeader from './SectionHeader';
 import styles from './RepeatableSection.module.css';
 
-export default function RepeatableSection({ title, items, onAdd, onRemove, renderItem, addLabel = '+ 항목 추가' }) {
+export default function RepeatableSection({ title, items, onAdd, onRemove, renderItem, addLabel = '+ 항목 추가', complete }) {
   return (
     <div className={styles.wrapper}>
-      <h3 className={styles.title}>{title}</h3>
+      <SectionHeader title={title} complete={complete} />
       <div className={styles.list}>
         {items.map((item, index) => (
           <div key={index} className={styles.card}>

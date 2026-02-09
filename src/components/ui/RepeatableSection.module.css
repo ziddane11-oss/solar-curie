@@ -4,13 +4,6 @@
   gap: 16px;
 }
 
-.title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1b1e2b;
-  margin: 0;
-}
-
 .list {
   display: flex;
   flex-direction: column;
@@ -19,13 +12,19 @@
 
 /* ─── Card ─────────────────────────────────────────────────────── */
 .card {
-  border: 1px solid #d8dbe8;
+  border: 1px solid #d0d3e4;
   border-radius: 14px;
   background: #fff;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.card:hover {
+  border-color: #b8bdd4;
+  box-shadow: 0 2px 8px rgba(20, 20, 43, 0.04);
 }
 
 .cardHeader {
@@ -96,6 +95,7 @@
   cursor: pointer;
   padding: 4px 10px;
   border-radius: 6px;
+  transition: background 0.15s;
 }
 
 .removeBtn:hover {

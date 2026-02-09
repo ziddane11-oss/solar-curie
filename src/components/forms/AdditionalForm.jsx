@@ -1,5 +1,6 @@
 'use client';
 
+import SectionHeader from '../ui/SectionHeader';
 import styles from './Form.module.css';
 
 export default function AdditionalForm({ data, onChange }) {
@@ -9,7 +10,7 @@ export default function AdditionalForm({ data, onChange }) {
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.sectionTitle}>기타</h3>
+      <SectionHeader title="기타" />
       <div className={styles.grid}>
         <label>
           장애 여부/등급
