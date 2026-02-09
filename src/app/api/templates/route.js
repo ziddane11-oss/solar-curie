@@ -19,10 +19,11 @@ export async function GET() {
         templates.push({
           id: entry.name,
           name: map.template_name || map.template_id || entry.name,
+          displayName: map.display_name || map.template_name || entry.name,
           ruleCount: map.rules?.length || 0
         });
       } catch (error) {
-        templates.push({ id: entry.name, name: entry.name, ruleCount: 0 });
+        templates.push({ id: entry.name, name: entry.name, displayName: entry.name, ruleCount: 0 });
       }
     }
 
