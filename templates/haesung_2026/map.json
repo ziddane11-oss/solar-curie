@@ -1,6 +1,7 @@
 {
   "template_id": "haesung_2026",
   "template_name": "해성고 2026 지원서",
+  "display_name": "표준 지원서",
   "version": 1,
   "description": "해성고등학교 2026학년도 기간제교사 채용 지원서 양식",
   "supported_packs": ["teacher"],

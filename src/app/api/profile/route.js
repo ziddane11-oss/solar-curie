@@ -1,29 +1,22 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
+import path from 'path';
 import { dataDir, profilePath } from '@/lib/paths';
 
 export const runtime = 'nodejs';
 
-const defaultProfile = {
-  version: 2,
-  personal: {
-    name: '', name_hanja: '', birth: '', gender: '',
-    phone: '', phone_secondary: '', email: '',
-    address: '', address_detail: '', postal_code: '',
-  },
-  teacher_cert: [{ cert_type: '', cert_subject: '', cert_number: '', cert_date: '', issuer: '' }],
-  other_certs: [],
-  education: [{ school: '', major: '', degree: '', status: '', start_date: '', end_date: '', thesis_title: '' }],
-  career: [{ institution: '', position: '', subject: '', start_date: '', end_date: '', is_contract: true, total_months: 0, notes: '' }],
-  military: { status: '', branch: '', rank: '', start_date: '', end_date: '' },
-  additional: { disability: '', veteran: '', multi_cultural: false, custom_fields: [] },
-};
+const defaultProfilePath = path.join(process.cwd(), 'data', 'profile.json');
+async function getDefaultProfile() {
+  const raw = await fs.readFile(defaultProfilePath, 'utf-8');
+  return JSON.parse(raw);
+}
 
 export async function GET() {
   try {
     const data = await fs.readFile(profilePath, 'utf-8');
     return NextResponse.json({ profile: JSON.parse(data) });
   } catch {
+    const defaultProfile = await getDefaultProfile();
     await fs.mkdir(dataDir, { recursive: true });
     await fs.writeFile(profilePath, JSON.stringify(defaultProfile, null, 2), 'utf-8');
     return NextResponse.json({ profile: defaultProfile });

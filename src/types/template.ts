@@ -24,6 +24,7 @@ export interface FieldRequirement {
 export interface TemplateMap {
   template_id: string;
   template_name: string;
+  display_name?: string;
   version: number;
   description: string;
   supported_packs: string[];
@@ -35,6 +36,7 @@ export interface TemplateMap {
 export interface TemplateListItem {
   id: string;
   name: string;
+  displayName: string;
   description: string;
   ruleCount: number;
   requiredFieldCount: number;

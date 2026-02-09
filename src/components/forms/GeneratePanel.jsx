@@ -25,7 +25,7 @@ export default function GeneratePanel({ templates, onGenerate, isGenerating, sta
           템플릿 선택
           <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value)}>
             {templates.map((t) => (
-              <option key={t.id} value={t.id}>{t.name || t.id}</option>
+              <option key={t.id} value={t.id}>{t.displayName || t.name || t.id}</option>
             ))}
           </select>
         </label>

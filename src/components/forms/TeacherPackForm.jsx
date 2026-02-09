@@ -10,52 +10,26 @@ export default function TeacherPackForm({ teacherPack, onChange }) {
     school_target: { school_name: '', department: '', tasks: '', contract_reason: '', contract_start: '', contract_end: '' },
   };
 
-  const update = (path, value) => {
+  const mutate = (fn) => {
     const next = JSON.parse(JSON.stringify(tp));
+    fn(next);
+    onChange(next);
+  };
+
+  const update = (path, value) => mutate((d) => {
     const keys = path.split('.');
-    let obj = next;
-    for (let i = 0; i < keys.length - 1; i++) {
-      obj = obj[keys[i]];
-    }
+    let obj = d;
+    for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]];
     obj[keys[keys.length - 1]] = value;
-    onChange(next);
-  };
+  });
 
-  const updateCert = (index, field, value) => {
-    const next = JSON.parse(JSON.stringify(tp));
-    next.teacher_cert[index][field] = value;
-    onChange(next);
-  };
+  const updateCert = (index, field, value) => mutate((d) => { d.teacher_cert[index][field] = value; });
+  const addCert = () => mutate((d) => { d.teacher_cert.push({ cert_type: '', cert_subject: '', cert_number: '', cert_date: '', issuer: '' }); });
+  const removeCert = (index) => mutate((d) => { d.teacher_cert.splice(index, 1); });
 
-  const addCert = () => {
-    const next = JSON.parse(JSON.stringify(tp));
-    next.teacher_cert.push({ cert_type: '', cert_subject: '', cert_number: '', cert_date: '', issuer: '' });
-    onChange(next);
-  };
-
-  const removeCert = (index) => {
-    const next = JSON.parse(JSON.stringify(tp));
-    next.teacher_cert.splice(index, 1);
-    onChange(next);
-  };
-
-  const updateOtherCert = (index, field, value) => {
-    const next = JSON.parse(JSON.stringify(tp));
-    next.other_certs[index][field] = value;
-    onChange(next);
-  };
-
-  const addOtherCert = () => {
-    const next = JSON.parse(JSON.stringify(tp));
-    next.other_certs.push({ cert_name: '', cert_number: '', cert_date: '', issuer: '' });
-    onChange(next);
-  };
-
-  const removeOtherCert = (index) => {
-    const next = JSON.parse(JSON.stringify(tp));
-    next.other_certs.splice(index, 1);
-    onChange(next);
-  };
+  const updateOtherCert = (index, field, value) => mutate((d) => { d.other_certs[index][field] = value; });
+  const addOtherCert = () => mutate((d) => { d.other_certs.push({ cert_name: '', cert_number: '', cert_date: '', issuer: '' }); });
+  const removeOtherCert = (index) => mutate((d) => { d.other_certs.splice(index, 1); });
 
   return (
     <div className={styles.section}>
