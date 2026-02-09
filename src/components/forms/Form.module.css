@@ -383,6 +383,50 @@
   image-rendering: auto;
 }
 
+/* ─── Collapsible (details/summary) ──────────────────────────── */
+.collapsible {
+  margin-top: 8px;
+  border: 1px solid #e5e7f0;
+  border-radius: 10px;
+  background: #fafbfd;
+  padding: 0;
+}
+
+.collapsibleSummary {
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1b1e2b;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collapsibleSummary::before {
+  content: '\25B8';
+  font-size: 12px;
+  color: #8b90a7;
+  transition: transform 0.15s;
+}
+
+.collapsible[open] > .collapsibleSummary::before {
+  transform: rotate(90deg);
+}
+
+.collapsibleSummary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible[open] {
+  padding-bottom: 20px;
+}
+
+.collapsible .grid {
+  padding: 0 20px;
+}
+
 /* ─── Overflow info badge ────────────────────────────────────── */
 .overflowBadge {
   display: inline-flex;
