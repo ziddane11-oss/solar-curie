@@ -279,3 +279,119 @@
 .removeBtn:hover {
   text-decoration: underline;
 }
+
+/* ─── Stamp panel ────────────────────────────────────────────── */
+.stampSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #f8f9fc;
+  border: 1px solid #e5e7f0;
+}
+
+.stampToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1b1e2b;
+  cursor: pointer;
+  padding: 0;
+}
+
+.stampToggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #2f3dd8;
+}
+
+.stampControls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.stampSizeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stampSizeLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a4e64;
+}
+
+.stampSizeGroup {
+  display: flex;
+  gap: 6px;
+}
+
+.stampSizeBtn {
+  padding: 5px 14px;
+  border: 1px solid #d8dbe8;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a4e64;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.stampSizeBtn:hover {
+  border-color: #2f3dd8;
+  color: #2f3dd8;
+}
+
+.stampSizeBtnActive {
+  border-color: #2f3dd8;
+  background: #eef0ff;
+  color: #2f3dd8;
+  font-weight: 600;
+}
+
+.stampPreviewBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stampPreviewLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a4e64;
+}
+
+.stampPreviewArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border: 1px dashed #d8dbe8;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.stampPreviewArea img {
+  image-rendering: auto;
+}
+
+/* ─── Overflow info badge ────────────────────────────────────── */
+.overflowBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #fef3cd;
+  color: #856404;
+  font-size: 13px;
+  font-weight: 500;
+}

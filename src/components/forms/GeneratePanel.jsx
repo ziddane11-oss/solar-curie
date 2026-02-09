@@ -1,11 +1,28 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import StampPanel from './StampPanel';
+import { generateStampDataURL, dataURLtoBytes } from '@/lib/stamp';
+import { postProcessPDF, splitCareerEntries } from '@/lib/pdf-postprocess';
+import { buildDataContext } from '@/lib/mapping';
 import styles from './Form.module.css';
 
-export default function GeneratePanel({ templates, onGenerate, isGenerating, status, downloadUrl, log }) {
+export default function GeneratePanel({
+  templates,
+  onGenerate,
+  isGenerating,
+  status,
+  downloadUrl,
+  log,
+  profile,
+  coverLetter,
+  stampSettings,
+  onStampChange,
+}) {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [file, setFile] = useState(null);
+  const [processedUrl, setProcessedUrl] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Auto-select first template
   useMemo(() => {
@@ -14,9 +31,66 @@ export default function GeneratePanel({ templates, onGenerate, isGenerating, sta
     }
   }, [templates, selectedTemplate]);
 
+  // Selected template config
+  const templateConfig = useMemo(
+    () => templates.find((t) => t.id === selectedTemplate) || {},
+    [templates, selectedTemplate],
+  );
+
+  // Career overflow detection
+  const overflowInfo = useMemo(() => {
+    if (!profile?.career || !templateConfig.maxCareerRows) return null;
+    const ctx = buildDataContext(profile, coverLetter);
+    const { overflow } = splitCareerEntries(ctx.career, templateConfig.maxCareerRows);
+    return overflow.length > 0 ? overflow : null;
+  }, [profile, coverLetter, templateConfig]);
+
   const handleGenerate = () => {
+    setProcessedUrl('');
     onGenerate({ templateId: selectedTemplate, file });
   };
+
+  // Post-process: overflow pages + stamp overlay
+  const handlePostProcess = async () => {
+    if (!downloadUrl) return;
+    setIsProcessing(true);
+
+    try {
+      const res = await fetch(downloadUrl);
+      if (!res.ok) throw new Error('PDF fetch failed');
+      const pdfBytes = new Uint8Array(await res.arrayBuffer());
+
+      const ctx = buildDataContext(profile, coverLetter);
+      const maxRows = templateConfig.maxCareerRows || 0;
+      const { overflow: overflowEntries } = splitCareerEntries(ctx.career, maxRows);
+
+      let stampPngBytes = null;
+      if (stampSettings?.enabled) {
+        const stampName = stampSettings.name || profile?.personal?.name || '';
+        if (stampName) {
+          const dataURL = generateStampDataURL(stampName, stampSettings.size);
+          stampPngBytes = dataURLtoBytes(dataURL);
+        }
+      }
+
+      const processed = await postProcessPDF({
+        pdfBytes,
+        overflowEntries: overflowEntries.length > 0 ? overflowEntries : null,
+        stampPngBytes: stampSettings?.enabled ? stampPngBytes : null,
+        stampAnchors: stampSettings?.enabled ? (templateConfig.stampAnchors || []) : [],
+      });
+
+      const blob = new Blob([processed], { type: 'application/pdf' });
+      setProcessedUrl(URL.createObjectURL(blob));
+    } catch (err) {
+      console.error('PDF post-process error:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const finalUrl = processedUrl || downloadUrl;
+  const needsPostProcess = downloadUrl && !processedUrl && (overflowInfo || stampSettings?.enabled);
 
   return (
     <div className={styles.section}>
@@ -35,6 +109,18 @@ export default function GeneratePanel({ templates, onGenerate, isGenerating, sta
         </label>
       </div>
 
+      {overflowInfo && (
+        <div className={styles.overflowBadge}>
+          경력 {profile.career.length}건 중 {overflowInfo.length}건이 추가 페이지에 출력됩니다
+        </div>
+      )}
+
+      <StampPanel
+        settings={stampSettings}
+        profileName={profile?.personal?.name || ''}
+        onChange={onStampChange}
+      />
+
       <button
         type="button"
         className={styles.primaryBtn}
@@ -44,10 +130,27 @@ export default function GeneratePanel({ templates, onGenerate, isGenerating, sta
         {isGenerating ? '생성 중...' : 'PDF 생성'}
       </button>
 
+      {needsPostProcess && (
+        <button
+          type="button"
+          className={styles.primaryBtn}
+          onClick={handlePostProcess}
+          disabled={isProcessing}
+        >
+          {isProcessing ? '후처리 중...' : '도장·추가페이지 적용'}
+        </button>
+      )}
+
       <div className={styles.resultBlock}>
         <h3 className={styles.sectionTitle}>결과</h3>
-        {downloadUrl ? (
-          <a className={styles.downloadLink} href={downloadUrl}>result.pdf 다운로드</a>
+        {finalUrl ? (
+          <a
+            className={styles.downloadLink}
+            href={finalUrl}
+            download={processedUrl ? 'result.pdf' : undefined}
+          >
+            result.pdf 다운로드{processedUrl ? ' (후처리 완료)' : ''}
+          </a>
         ) : (
           <p className={styles.muted}>아직 생성된 PDF가 없습니다.</p>
         )}

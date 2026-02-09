@@ -25,6 +25,8 @@ import {
   setActiveProfileId,
   loadCoverLetter,
   saveCoverLetter,
+  loadStampSettings,
+  saveStampSettings,
   resetAllData,
   debouncedSave,
 } from '@/lib/storage';
@@ -50,6 +52,7 @@ export default function Home() {
   const [log, setLog] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [stampSettings, setStampSettings] = useState({ enabled: false, name: '', size: 'M' });
   const [loaded, setLoaded] = useState(false);
 
   const auth = useAuth();
@@ -61,6 +64,7 @@ export default function Home() {
     setActiveId(entry.id);
     setProfiles(getAllProfiles());
     setCoverLetter(loadCoverLetter(emptyCoverLetter));
+    setStampSettings(loadStampSettings());
     setLoaded(true);
 
     // Load templates from API
@@ -249,6 +253,10 @@ export default function Home() {
             status={status}
             downloadUrl={downloadUrl}
             log={log}
+            profile={profile}
+            coverLetter={coverLetter}
+            stampSettings={stampSettings}
+            onStampChange={(s) => { setStampSettings(s); saveStampSettings(s); }}
           />
         );
       default:
