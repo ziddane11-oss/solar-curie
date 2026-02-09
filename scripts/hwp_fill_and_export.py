@@ -122,7 +122,7 @@ def main():
 
         pdf_path = os.path.join(output_dir, 'result.pdf')
         hwp.HAction.GetDefault('FileSaveAs', hwp.HParameterSet.HFileSaveAs.HSet)
-        hwp.HParameterSet.HFileSaveAs.filename = pdf_path
+        hwp.HParameterSet.HFileSaveAs.FileName = pdf_path
         hwp.HParameterSet.HFileSaveAs.Format = 'PDF'
         hwp.HParameterSet.HFileSaveAs.Arg = ''
         hwp.HAction.Execute('FileSaveAs', hwp.HParameterSet.HFileSaveAs.HSet)
