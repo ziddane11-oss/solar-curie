@@ -48,6 +48,8 @@ export default function Home() {
   const [templates, setTemplates] = useState([]);
   const [activeTab, setActiveTab] = useState('basic');
   const [status, setStatus] = useState('');
+  const [saveState, setSaveState] = useState('idle'); // idle | saving | saved | error
+  const [lastSavedAt, setLastSavedAt] = useState(null);
   const [log, setLog] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -74,20 +76,52 @@ export default function Home() {
   // Auto-save profile on change (debounced)
   useEffect(() => {
     if (!loaded || !activeId) return;
+    setSaveState('saving');
     debouncedSave(() => {
-      saveProfile(activeId, profile);
-      setProfiles(getAllProfiles());
-      setStatus('자동 저장됨');
+      try {
+        saveProfile(activeId, profile);
+        setProfiles(getAllProfiles());
+        setSaveState('saved');
+        setLastSavedAt(new Date());
+      } catch {
+        setSaveState('error');
+      }
     }, 500);
   }, [profile, loaded, activeId]);
 
   // Auto-save cover letter on change (debounced)
   useEffect(() => {
     if (!loaded) return;
+    setSaveState('saving');
     debouncedSave(() => {
-      saveCoverLetter(coverLetter);
+      try {
+        saveCoverLetter(coverLetter);
+        setSaveState('saved');
+        setLastSavedAt(new Date());
+      } catch {
+        setSaveState('error');
+      }
     }, 500);
   }, [coverLetter, loaded]);
+
+  const retrySave = useCallback(() => {
+    try {
+      if (activeId) saveProfile(activeId, profile);
+      saveCoverLetter(coverLetter);
+      setSaveState('saved');
+      setLastSavedAt(new Date());
+    } catch {
+      setSaveState('error');
+    }
+  }, [activeId, profile, coverLetter]);
+
+  const saveIndicator = saveState === 'saving'
+    ? '저장 중...'
+    : saveState === 'saved' && lastSavedAt
+      ? `저장됨 \u2713 \u00B7 ${lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`
+      : saveState === 'error'
+        ? '저장 실패'
+        : '';
 
   const updateProfile = useCallback((key, value) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
@@ -272,7 +306,12 @@ export default function Home() {
           <p>원서 자동 작성 · PDF 출력</p>
         </div>
         <div className={styles.headerActions}>
-          <span className={styles.status}>{status}</span>
+          <span className={`${styles.status} ${saveState === 'error' ? styles.statusError : ''}`}>
+            {saveIndicator}
+            {saveState === 'error' && (
+              <button type="button" className={styles.retryBtn} onClick={retrySave}>다시 시도</button>
+            )}
+          </span>
           {isFeatureEnabled('cloud_sync') && (
             <button type="button" className={styles.saveBtn} disabled>
               {auth.isLoggedIn ? '클라우드 동기화' : 'Sign in'}

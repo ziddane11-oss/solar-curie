@@ -1,20 +1,20 @@
 .section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .sectionTitle {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: #1b1e2b;
   margin: 0;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
 }
 
 .full {
@@ -26,8 +26,8 @@
 .grid label {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 14px;
   font-weight: 500;
   color: #4a4e64;
 }
@@ -52,10 +52,11 @@
 .grid input[type="file"],
 .grid input:not([type]),
 .grid select {
-  padding: 9px 12px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 10px;
   border: 1px solid #d8dbe8;
-  font-size: 14px;
+  font-size: 15px;
   background: #fff;
   color: #1b1e2b;
   transition: border-color 0.15s;
@@ -141,11 +142,16 @@
   color: #fff;
   border: none;
   padding: 12px 20px;
+  min-height: 44px;
   border-radius: 10px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.primaryBtn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .primaryBtn:hover:not(:disabled) {
@@ -155,6 +161,41 @@
 .primaryBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Success / Error blocks */
+.successBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+}
+
+.successText {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.errorBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+}
+
+.errorText {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #dc2626;
 }
 
 /* Result block */
