@@ -20,6 +20,16 @@ export interface FieldRequirement {
   required: boolean;
 }
 
+// ─── 전자도장 위치 앵커 ─────────────────────────────────────────
+export interface StampAnchor {
+  pageIndex: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fieldKey: string; // "authorSeal" | "consentSeal" etc.
+}
+
 // ─── 템플릿 매핑 정의 ──────────────────────────────────────────
 export interface TemplateMap {
   template_id: string;
@@ -30,6 +40,8 @@ export interface TemplateMap {
   supported_packs: string[];
   required_fields: FieldRequirement[];
   rules: MappingRule[];
+  max_career_rows?: number;
+  stamp_anchors?: StampAnchor[];
 }
 
 // ─── 템플릿 목록 아이템 (API 응답용) ───────────────────────────
@@ -40,6 +52,8 @@ export interface TemplateListItem {
   description: string;
   ruleCount: number;
   requiredFieldCount: number;
+  maxCareerRows?: number;
+  stampAnchors?: StampAnchor[];
 }
 
 // ─── 매핑 결과 ──────────────────────────────────────────────────

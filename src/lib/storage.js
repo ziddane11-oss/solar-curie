@@ -9,6 +9,7 @@ const STORAGE_PREFIX = 'app:v1';
 const PROFILES_KEY = `${STORAGE_PREFIX}:profiles`;
 const COVER_LETTER_KEY = `${STORAGE_PREFIX}:coverLetter`;
 const ACTIVE_PROFILE_KEY = `${STORAGE_PREFIX}:activeProfileId`;
+const STAMP_KEY = `${STORAGE_PREFIX}:stampSettings`;
 
 // ─── Helpers ────────────────────────────────────────────────────
 function readJSON(key, fallback) {
@@ -160,6 +161,18 @@ export function loadCoverLetter(emptyCoverLetter) {
 
 export function saveCoverLetter(coverLetter) {
   writeJSON(COVER_LETTER_KEY, coverLetter);
+}
+
+// ─── Stamp Settings ─────────────────────────────────────────────
+
+const DEFAULT_STAMP = { enabled: false, name: '', size: 'M' };
+
+export function loadStampSettings() {
+  return readJSON(STAMP_KEY, DEFAULT_STAMP);
+}
+
+export function saveStampSettings(settings) {
+  writeJSON(STAMP_KEY, settings);
 }
 
 // ─── Reset All ──────────────────────────────────────────────────

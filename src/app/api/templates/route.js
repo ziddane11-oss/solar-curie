@@ -20,7 +20,9 @@ export async function GET() {
           id: entry.name,
           name: map.template_name || map.template_id || entry.name,
           displayName: map.display_name || map.template_name || entry.name,
-          ruleCount: map.rules?.length || 0
+          ruleCount: map.rules?.length || 0,
+          maxCareerRows: map.max_career_rows || 0,
+          stampAnchors: map.stamp_anchors || [],
         });
       } catch (error) {
         templates.push({ id: entry.name, name: entry.name, displayName: entry.name, ruleCount: 0 });

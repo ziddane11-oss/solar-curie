@@ -86,6 +86,13 @@
   accent-color: #2f3dd8;
 }
 
+/* Cover letter section list */
+.coverLetterList {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
 /* Textarea (cover letter) */
 .textarea {
   width: 100%;
@@ -94,10 +101,12 @@
   border: 1px solid #d8dbe8;
   font-size: 14px;
   line-height: 1.7;
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
   min-height: 140px;
   color: #1b1e2b;
   font-family: inherit;
+  transition: border-color 0.15s;
 }
 
 .textarea:focus {
@@ -109,7 +118,20 @@
 .textBlock {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #fff;
+  transition: background 0.15s;
+}
+
+.textBlock:nth-child(odd) {
+  background: #f8f9fc;
+}
+
+.textBlock + .textBlock {
+  border-top: 1px solid #e5e7f0;
+  padding-top: 28px;
 }
 
 .textHeader {
@@ -118,13 +140,44 @@
   align-items: center;
 }
 
+.sectionIndex {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #2f3dd8;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .charCount {
   font-size: 12px;
   color: #8b90a7;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.charWarn {
+  color: #c27803;
+  background: #fef3cd;
+  font-weight: 500;
 }
 
 .charOver {
   color: #e53e3e;
+  background: #fee2e2;
   font-weight: 600;
 }
 
@@ -225,4 +278,120 @@
 
 .removeBtn:hover {
   text-decoration: underline;
+}
+
+/* ─── Stamp panel ────────────────────────────────────────────── */
+.stampSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #f8f9fc;
+  border: 1px solid #e5e7f0;
+}
+
+.stampToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1b1e2b;
+  cursor: pointer;
+  padding: 0;
+}
+
+.stampToggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #2f3dd8;
+}
+
+.stampControls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.stampSizeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stampSizeLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a4e64;
+}
+
+.stampSizeGroup {
+  display: flex;
+  gap: 6px;
+}
+
+.stampSizeBtn {
+  padding: 5px 14px;
+  border: 1px solid #d8dbe8;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a4e64;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.stampSizeBtn:hover {
+  border-color: #2f3dd8;
+  color: #2f3dd8;
+}
+
+.stampSizeBtnActive {
+  border-color: #2f3dd8;
+  background: #eef0ff;
+  color: #2f3dd8;
+  font-weight: 600;
+}
+
+.stampPreviewBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stampPreviewLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a4e64;
+}
+
+.stampPreviewArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border: 1px dashed #d8dbe8;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.stampPreviewArea img {
+  image-rendering: auto;
+}
+
+/* ─── Overflow info badge ────────────────────────────────────── */
+.overflowBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #fef3cd;
+  color: #856404;
+  font-size: 13px;
+  font-weight: 500;
 }
