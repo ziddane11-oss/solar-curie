@@ -14,6 +14,7 @@ export default function CareerForm({ items, onChange }) {
     <RepeatableSection
       title="경력사항"
       items={items}
+      addLabel="+ 경력 추가"
       onAdd={() => onChange([...items, { institution: '', position: '', subject: '', start_date: '', end_date: '', is_contract: true, total_months: 0, notes: '' }])}
       onRemove={(i) => onChange(items.filter((_, idx) => idx !== i))}
       renderItem={(item, index) => (

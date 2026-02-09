@@ -1,77 +1,129 @@
 .wrapper {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 16px;
 }
 
 .title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: #1b1e2b;
   margin: 0;
-}
-
-.addBtn {
-  border: none;
-  background: #eef0ff;
-  color: #2f3dd8;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.addBtn:hover {
-  background: #dde1ff;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-.item {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: start;
-  background: #f8f8ff;
-  border-radius: 12px;
-  padding: 16px;
-}
-
-.itemContent {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-}
-
-.removeBtn {
-  border: none;
-  background: #ffe5e5;
-  color: #c53030;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
+/* ─── Card ─────────────────────────────────────────────────────── */
+.card {
+  border: 1px solid #d8dbe8;
+  border-radius: 14px;
+  background: #fff;
+  padding: 20px;
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardIndex {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8b90a7;
+  background: #f0f1f6;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  margin-top: 20px;
+}
+
+.cardBody {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+/* ─── Labels inside cards ──────────────────────────────────────── */
+.cardBody label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a4e64;
+}
+
+.cardBody input[type="text"],
+.cardBody input[type="email"],
+.cardBody input[type="date"],
+.cardBody input[type="month"],
+.cardBody input:not([type]),
+.cardBody select {
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid #d8dbe8;
+  font-size: 14px;
+  background: #fff;
+  color: #1b1e2b;
+  transition: border-color 0.15s;
+}
+
+.cardBody input:focus,
+.cardBody select:focus {
+  outline: none;
+  border-color: #2f3dd8;
+  box-shadow: 0 0 0 3px rgba(47, 61, 216, 0.08);
+}
+
+/* ─── Remove button ────────────────────────────────────────────── */
+.removeBtn {
+  border: none;
+  background: none;
+  color: #c53030;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
 }
 
 .removeBtn:hover {
-  background: #fcc;
+  background: #ffe5e5;
+}
+
+/* ─── Add button ───────────────────────────────────────────────── */
+.addBtn {
+  border: 1px dashed #b8bdd4;
+  background: #f8f9fc;
+  color: #2f3dd8;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.addBtn:hover {
+  background: #eef0ff;
+  border-color: #2f3dd8;
+}
+
+/* ─── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .cardBody {
+    grid-template-columns: 1fr;
+  }
 }

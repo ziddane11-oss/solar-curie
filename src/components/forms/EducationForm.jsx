@@ -17,6 +17,7 @@ export default function EducationForm({ items, onChange }) {
     <RepeatableSection
       title="학력"
       items={items}
+      addLabel="+ 학력 추가"
       onAdd={() => onChange([...items, { school: '', major: '', degree: '', status: '', start_date: '', end_date: '', thesis_title: '' }])}
       onRemove={(i) => onChange(items.filter((_, idx) => idx !== i))}
       renderItem={(item, index) => (
