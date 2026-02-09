@@ -11,6 +11,54 @@
   margin: 0;
 }
 
+/* ─── Section card with left accent ──────────────────────────── */
+.sectionCard {
+  background: #fff;
+  border-radius: 14px;
+  border-left: 4px solid #2f3dd8;
+  padding: 24px 28px;
+  box-shadow: 0 2px 12px rgba(20, 20, 43, 0.04);
+}
+
+.sectionCard .sectionTitle {
+  font-size: 16px;
+}
+
+/* ─── Usage guide banner ─────────────────────────────────────── */
+.guideBanner {
+  background: #f0f1ff;
+  border-radius: 14px;
+  padding: 20px 24px;
+  border: 1px solid #dde1ff;
+}
+
+.guideBanner h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2f3dd8;
+  margin: 0 0 10px;
+}
+
+.guideBanner ol {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guideBanner ol li {
+  font-size: 13px;
+  color: #4a4e64;
+  line-height: 1.6;
+}
+
+.guideBanner .guideNote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #2f3dd8;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));

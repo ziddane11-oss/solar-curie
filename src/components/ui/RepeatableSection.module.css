@@ -1,35 +1,14 @@
 .wrapper {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 14px;
 }
 
 .title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: #1b1e2b;
   margin: 0;
-}
-
-.addBtn {
-  border: none;
-  background: #eef0ff;
-  color: #2f3dd8;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.addBtn:hover {
-  background: #dde1ff;
 }
 
 .list {
@@ -45,14 +24,33 @@
   gap: 8px;
   align-items: start;
   background: #f8f8ff;
+  border: 1px solid #ecedf5;
   border-radius: 12px;
-  padding: 16px;
+  padding: 18px;
 }
 
 .itemContent {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
+}
+
+.addBtn {
+  border: 1px dashed #c0c4d8;
+  background: none;
+  color: #2f3dd8;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  align-self: center;
+  transition: all 0.15s;
+}
+
+.addBtn:hover {
+  border-color: #2f3dd8;
+  background: #f0f1ff;
 }
 
 .removeBtn {

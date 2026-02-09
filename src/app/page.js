@@ -32,6 +32,7 @@ import {
 } from '@/lib/storage';
 import { exportProfileJSON, importProfileJSON, openFilePicker } from '@/lib/io';
 import { useAuth, isFeatureEnabled } from '@/lib/auth';
+import formStyles from '@/components/forms/Form.module.css';
 import styles from './page.module.css';
 
 const TABS = [
@@ -215,20 +216,35 @@ export default function Home() {
     switch (activeTab) {
       case 'basic':
         return (
-          <>
-            <PersonalInfoForm data={profile.personal} onChange={(v) => updateProfile('personal', v)} />
-            <div style={{ height: 24 }} />
-            <EducationForm items={profile.education} onChange={(v) => updateProfile('education', v)} />
-            <div style={{ height: 24 }} />
-            <CareerForm items={profile.career} onChange={(v) => updateProfile('career', v)} />
-            <div style={{ height: 24 }} />
-            <MilitaryForm data={profile.military} onChange={(v) => updateProfile('military', v)} />
-            <div style={{ height: 24 }} />
-            <AdditionalForm
-              data={{ disability: '', veteran: '', multi_cultural: false, custom_fields: profile.custom_fields || [] }}
-              onChange={(v) => updateProfile('custom_fields', v.custom_fields || [])}
-            />
-          </>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className={formStyles.guideBanner}>
+              <h3>사용 안내</h3>
+              <ol>
+                <li>기본정보를 입력</li>
+                <li>출력 탭에서이나 자원서 파일을 선택</li>
+                <li>PDF 생성 실행</li>
+              </ol>
+              <p className={formStyles.guideNote}>중요한 데이터는 내보내기로 백업하세요.</p>
+            </div>
+            <div className={formStyles.sectionCard}>
+              <PersonalInfoForm data={profile.personal} onChange={(v) => updateProfile('personal', v)} />
+            </div>
+            <div className={formStyles.sectionCard}>
+              <EducationForm items={profile.education} onChange={(v) => updateProfile('education', v)} />
+            </div>
+            <div className={formStyles.sectionCard}>
+              <CareerForm items={profile.career} onChange={(v) => updateProfile('career', v)} />
+            </div>
+            <div className={formStyles.sectionCard}>
+              <MilitaryForm data={profile.military} onChange={(v) => updateProfile('military', v)} />
+            </div>
+            <div className={formStyles.sectionCard}>
+              <AdditionalForm
+                data={{ disability: '', veteran: '', multi_cultural: false, custom_fields: profile.custom_fields || [] }}
+                onChange={(v) => updateProfile('custom_fields', v.custom_fields || [])}
+              />
+            </div>
+          </div>
         );
       case 'teacher':
         return (
