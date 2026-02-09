@@ -7,7 +7,6 @@ from datetime import datetime
 
 try:
     import win32com.client  # type: ignore
-    import win32com  # type: ignore
 except ImportError:
     win32com = None
 
@@ -52,16 +51,6 @@ def ensure_output_dir(output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
 
-def clear_gen_py_cache():
-    """gen_py 캐시 삭제 - EnsureDispatch가 만든 엄격 모드 캐시 제거"""
-    try:
-        gen_path = getattr(win32com, '__gen_path__', None)
-        if gen_path and os.path.isdir(gen_path):
-            shutil.rmtree(gen_path, ignore_errors=True)
-    except Exception:
-        pass
-
-
 def main():
     if len(sys.argv) < 6:
         print('Usage: hwp_fill_and_export.py input_path map_path profile_path year_path output_dir')
@@ -88,8 +77,11 @@ def main():
 
     profile['career_text_compiled'] = compile_career_text(profile, year_data)
 
-    # gen_py 캐시 삭제 (이전 EnsureDispatch 호출이 만든 엄격 모드 캐시)
-    clear_gen_py_cache()
+    # 1단계: input을 filled로 미리 복사 (SaveAs 회피)
+    extension = os.path.splitext(input_path)[1].lower()
+    filled_path = os.path.join(output_dir, f'filled{extension}')
+    shutil.copyfile(input_path, filled_path)
+    log_write(log_path, f'템플릿 복사: {input_path} -> {filled_path}')
 
     hwp = None
     try:
@@ -97,13 +89,15 @@ def main():
         hwp.RegisterModule('FilePathCheckDLL', 'SecurityModule')
         log_write(log_path, '한글 객체 생성 완료')
 
-        if not os.path.exists(input_path):
-            log_write(log_path, '입력 파일이 존재하지 않습니다.')
+        # 2단계: 복사본 열기
+        if not os.path.exists(filled_path):
+            log_write(log_path, '복사 파일이 존재하지 않습니다.')
             sys.exit(1)
 
-        hwp.Open(input_path)
-        log_write(log_path, f'문서 열기 성공: {input_path}')
+        hwp.Open(filled_path)
+        log_write(log_path, f'문서 열기 성공: {filled_path}')
 
+        # 3단계: 치환
         for rule in template_map.get('rules', []):
             rule_type = rule.get('type')
             value_path = rule.get('value_path', '')
@@ -130,54 +124,36 @@ def main():
             else:
                 log_write(log_path, f'지원하지 않는 rule 타입: {rule_type}')
 
-        extension = os.path.splitext(input_path)[1].lower()
-        filled_path = os.path.join(output_dir, f'filled{extension}')
-        hwp.SaveAs(filled_path)
+        # 4단계: FileSave로 저장 (SaveAs/FileSaveAs 파라미터셋 회피)
+        hwp.HAction.Run('FileSave')
         log_write(log_path, f'채워진 파일 저장: {filled_path}')
 
-        # PDF 저장 - SetItem 방식으로 파라미터 설정
+        # 5단계: PDF 변환 - SaveAs 메서드로 시도
         pdf_path = os.path.join(output_dir, 'result.pdf')
-        hwp.HAction.GetDefault('FileSaveAs', hwp.HParameterSet.HFileSaveAs.HSet)
-        pset = hwp.HParameterSet.HFileSaveAs
+        pdf_ok = False
 
-        # SetItem으로 파일 경로 설정 (속성 접근은 TypeLib에 따라 실패할 수 있음)
-        path_set = False
-        for key in ('SaveFileName', 'FileName', 'Filename', 'Path'):
-            try:
-                pset.SetItem(key, pdf_path)
-                log_write(log_path, f'PDF 경로 설정 성공 (SetItem {key})')
-                path_set = True
-                break
-            except Exception:
-                continue
-
-        if not path_set:
-            # SetItem 실패 시 속성 직접 접근 시도
-            for attr in ('SaveFileName', 'FileName', 'Filename'):
-                try:
-                    setattr(pset, attr, pdf_path)
-                    log_write(log_path, f'PDF 경로 설정 성공 (속성 {attr})')
-                    path_set = True
-                    break
-                except Exception:
-                    continue
-
-        if not path_set:
-            log_write(log_path, f'PDF 경로 설정 실패. pset dir: {[x for x in dir(pset)]}')
-            log_write(log_path, f'SetItem 존재 여부: {hasattr(pset, "SetItem")}')
-            raise RuntimeError('HFileSaveAs에 파일명 설정 불가')
-
-        # Format도 SetItem으로 시도
+        # 방법1: hwp.SaveAs(path, format) 메서드
         try:
-            pset.SetItem('Format', 'PDF')
-        except Exception:
-            try:
-                pset.Format = 'PDF'
-            except Exception:
-                log_write(log_path, 'Format 설정 실패 - 기본값으로 진행')
+            hwp.SaveAs(pdf_path, 'PDF')
+            log_write(log_path, f'PDF 저장 완료 (SaveAs 메서드): {pdf_path}')
+            pdf_ok = True
+        except Exception as e1:
+            log_write(log_path, f'PDF SaveAs 메서드 실패: {e1}')
 
-        hwp.HAction.Execute('FileSaveAs', pset.HSet)
-        log_write(log_path, f'PDF 저장 완료: {pdf_path}')
+        # 방법2: hwp.SaveAs(path) - 확장자로 자동 판별
+        if not pdf_ok:
+            try:
+                hwp.SaveAs(pdf_path)
+                if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
+                    log_write(log_path, f'PDF 저장 완료 (SaveAs 확장자): {pdf_path}')
+                    pdf_ok = True
+                else:
+                    log_write(log_path, 'SaveAs 확장자 방식 - 파일 생성 안됨')
+            except Exception as e2:
+                log_write(log_path, f'PDF SaveAs 확장자 실패: {e2}')
+
+        if not pdf_ok:
+            log_write(log_path, 'PDF 변환 실패 - filled HWP 파일은 정상 저장됨')
 
         time.sleep(0.5)
         hwp.Quit()
