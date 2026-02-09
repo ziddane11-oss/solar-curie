@@ -78,7 +78,7 @@ def main():
 
     hwp = None
     try:
-        hwp = win32com.client.gencache.EnsureDispatch('HWPFrame.HwpObject')
+        hwp = win32com.client.Dispatch('HWPFrame.HwpObject')
         hwp.RegisterModule('FilePathCheckDLL', 'SecurityModule')
         log_write(log_path, '한글 객체 생성 완료')
 
@@ -123,7 +123,21 @@ def main():
         pdf_path = os.path.join(output_dir, 'result.pdf')
         hwp.HAction.GetDefault('FileSaveAs', hwp.HParameterSet.HFileSaveAs.HSet)
         pset = hwp.HParameterSet.HFileSaveAs
-        pset.SaveFileName = pdf_path
+        for key in ('SaveFileName', 'FileName', 'Filename', 'Path'):
+            try:
+                pset.SetItem(key, pdf_path)
+                log_write(log_path, f'PDF 경로 설정 성공 (SetItem {key})')
+                break
+            except Exception:
+                continue
+        else:
+            try:
+                pset.SaveFileName = pdf_path
+                log_write(log_path, 'PDF 경로 설정 성공 (속성 SaveFileName)')
+            except Exception as err:
+                log_write(log_path, f'PDF 경로 설정 실패: {err}')
+                log_write(log_path, f'HFileSaveAs dir: {[x for x in dir(pset)]}')
+                raise
         pset.Format = 'PDF'
         hwp.HAction.Execute('FileSaveAs', pset.HSet)
         log_write(log_path, f'PDF 저장 완료: {pdf_path}')
