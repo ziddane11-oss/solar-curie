@@ -1,11 +1,13 @@
 import json
 import os
+import shutil
 import sys
 import time
 from datetime import datetime
 
 try:
     import win32com.client  # type: ignore
+    import win32com  # type: ignore
 except ImportError:
     win32com = None
 
@@ -50,6 +52,16 @@ def ensure_output_dir(output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
 
+def clear_gen_py_cache():
+    """gen_py 캐시 삭제 - EnsureDispatch가 만든 엄격 모드 캐시 제거"""
+    try:
+        gen_path = getattr(win32com, '__gen_path__', None)
+        if gen_path and os.path.isdir(gen_path):
+            shutil.rmtree(gen_path, ignore_errors=True)
+    except Exception:
+        pass
+
+
 def main():
     if len(sys.argv) < 6:
         print('Usage: hwp_fill_and_export.py input_path map_path profile_path year_path output_dir')
@@ -75,6 +87,9 @@ def main():
         sys.exit(1)
 
     profile['career_text_compiled'] = compile_career_text(profile, year_data)
+
+    # gen_py 캐시 삭제 (이전 EnsureDispatch 호출이 만든 엄격 모드 캐시)
+    clear_gen_py_cache()
 
     hwp = None
     try:
@@ -120,25 +135,47 @@ def main():
         hwp.SaveAs(filled_path)
         log_write(log_path, f'채워진 파일 저장: {filled_path}')
 
+        # PDF 저장 - SetItem 방식으로 파라미터 설정
         pdf_path = os.path.join(output_dir, 'result.pdf')
         hwp.HAction.GetDefault('FileSaveAs', hwp.HParameterSet.HFileSaveAs.HSet)
         pset = hwp.HParameterSet.HFileSaveAs
+
+        # SetItem으로 파일 경로 설정 (속성 접근은 TypeLib에 따라 실패할 수 있음)
+        path_set = False
         for key in ('SaveFileName', 'FileName', 'Filename', 'Path'):
             try:
                 pset.SetItem(key, pdf_path)
                 log_write(log_path, f'PDF 경로 설정 성공 (SetItem {key})')
+                path_set = True
                 break
             except Exception:
                 continue
-        else:
+
+        if not path_set:
+            # SetItem 실패 시 속성 직접 접근 시도
+            for attr in ('SaveFileName', 'FileName', 'Filename'):
+                try:
+                    setattr(pset, attr, pdf_path)
+                    log_write(log_path, f'PDF 경로 설정 성공 (속성 {attr})')
+                    path_set = True
+                    break
+                except Exception:
+                    continue
+
+        if not path_set:
+            log_write(log_path, f'PDF 경로 설정 실패. pset dir: {[x for x in dir(pset)]}')
+            log_write(log_path, f'SetItem 존재 여부: {hasattr(pset, "SetItem")}')
+            raise RuntimeError('HFileSaveAs에 파일명 설정 불가')
+
+        # Format도 SetItem으로 시도
+        try:
+            pset.SetItem('Format', 'PDF')
+        except Exception:
             try:
-                pset.SaveFileName = pdf_path
-                log_write(log_path, 'PDF 경로 설정 성공 (속성 SaveFileName)')
-            except Exception as err:
-                log_write(log_path, f'PDF 경로 설정 실패: {err}')
-                log_write(log_path, f'HFileSaveAs dir: {[x for x in dir(pset)]}')
-                raise
-        pset.Format = 'PDF'
+                pset.Format = 'PDF'
+            except Exception:
+                log_write(log_path, 'Format 설정 실패 - 기본값으로 진행')
+
         hwp.HAction.Execute('FileSaveAs', pset.HSet)
         log_write(log_path, f'PDF 저장 완료: {pdf_path}')
 
