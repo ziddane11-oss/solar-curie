@@ -123,7 +123,7 @@ def main():
         pdf_path = os.path.join(output_dir, 'result.pdf')
         hwp.HAction.GetDefault('FileSaveAs', hwp.HParameterSet.HFileSaveAs.HSet)
         pset = hwp.HParameterSet.HFileSaveAs
-        pset.Filename = pdf_path
+        pset.SaveFileName = pdf_path
         pset.Format = 'PDF'
         hwp.HAction.Execute('FileSaveAs', pset.HSet)
         log_write(log_path, f'PDF 저장 완료: {pdf_path}')
