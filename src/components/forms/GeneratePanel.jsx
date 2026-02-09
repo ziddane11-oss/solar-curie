@@ -34,6 +34,9 @@ export default function GeneratePanel({ templates, onGenerate, isGenerating, sta
           <input type="file" accept=".hwp,.hwpx" onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </label>
       </div>
+      <p className={styles.muted} style={{ marginTop: -12 }}>
+        학교/교육청 양식은 조금씩 다를 수 있습니다. 현재는 샘플 템플릿을 제공합니다.
+      </p>
 
       <button
         type="button"

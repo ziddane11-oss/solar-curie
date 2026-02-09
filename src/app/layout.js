@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: '지원서작성기',
-  description: '한글 양식 업로드 → 자동 채움 → PDF 다운로드',
+  title: '지원서도우미',
+  description: '원서 자동 작성 · PDF 출력',
   keywords: ['한글', 'HWP', 'HWPX', '지원서', 'PDF'],
 };
 

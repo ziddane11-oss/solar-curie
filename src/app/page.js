@@ -28,6 +28,7 @@ import {
   resetAllData,
   debouncedSave,
 } from '@/lib/storage';
+import OnboardingCard from '@/components/ui/OnboardingCard';
 import { exportProfileJSON, importProfileJSON, openFilePicker } from '@/lib/io';
 import { useAuth, isFeatureEnabled } from '@/lib/auth';
 import styles from './page.module.css';
@@ -212,6 +213,7 @@ export default function Home() {
       case 'basic':
         return (
           <>
+            <OnboardingCard />
             <PersonalInfoForm data={profile.personal} onChange={(v) => updateProfile('personal', v)} />
             <div style={{ height: 24 }} />
             <EducationForm items={profile.education} onChange={(v) => updateProfile('education', v)} />
@@ -260,8 +262,8 @@ export default function Home() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>지원서작성기</h1>
-          <p>프로필 입력 → 자기소개서 작성 → PDF 자동 생성</p>
+          <h1>지원서도우미</h1>
+          <p>원서 자동 작성 · PDF 출력</p>
         </div>
         <div className={styles.headerActions}>
           <span className={styles.status}>{status}</span>
