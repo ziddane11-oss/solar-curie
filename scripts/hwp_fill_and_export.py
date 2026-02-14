@@ -7,7 +7,6 @@ from datetime import datetime
 
 try:
     import win32com.client  # type: ignore
-    import win32com  # type: ignore
 except ImportError:
     win32com = None
 
@@ -83,14 +82,6 @@ def main():
     filled_path = os.path.join(output_dir, f'filled{extension}')
     shutil.copyfile(input_path, filled_path)
     log_write(log_path, f'템플릿 복사: {input_path} -> {filled_path}')
-
-    # gen_py 캐시 삭제 (이전 EnsureDispatch가 만든 strict binding 제거)
-    try:
-        gen_path = getattr(win32com, '__gen_path__', None)
-        if gen_path and os.path.isdir(gen_path):
-            shutil.rmtree(gen_path, ignore_errors=True)
-    except Exception:
-        pass
 
     hwp = None
     try:
