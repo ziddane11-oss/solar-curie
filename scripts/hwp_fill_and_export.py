@@ -7,7 +7,6 @@ from datetime import datetime
 
 try:
     import win32com.client  # type: ignore
-    import win32com.client.dynamic  # type: ignore
     import win32com  # type: ignore
 except ImportError:
     win32com = None
@@ -95,7 +94,7 @@ def main():
 
     hwp = None
     try:
-        hwp = win32com.client.dynamic.Dispatch('HWPFrame.HwpObject')
+        hwp = win32com.client.Dispatch('HWPFrame.HwpObject')
         hwp.RegisterModule('FilePathCheckDLL', 'SecurityModule')
         log_write(log_path, '한글 객체 생성 완료')
 
