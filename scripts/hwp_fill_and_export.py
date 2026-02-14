@@ -137,23 +137,32 @@ def main():
         hwp.HAction.Run('FileSave')
         log_write(log_path, f'채워진 파일 저장: {filled_path}')
 
-        # 5단계: PDF 변환 - FileSaveAsPdf 전용 액션 사용
+        # 5단계: PDF 변환
         pdf_path = os.path.join(output_dir, 'result.pdf')
+        pdf_ok = False
+
+        # 방법1: hwp.SaveAs(path, 'PDF') - 가장 단순하고 안정적
         try:
-            hwp.HAction.GetDefault('FileSaveAsPdf', hwp.HParameterSet.HFileSaveAsPdf.HSet)
-            pset = hwp.HParameterSet.HFileSaveAsPdf
-            pset.FileName = pdf_path
-            hwp.HAction.Execute('FileSaveAsPdf', pset.HSet)
-            log_write(log_path, f'PDF 저장 완료 (FileSaveAsPdf): {pdf_path}')
+            hwp.SaveAs(pdf_path, 'PDF')
+            log_write(log_path, f'PDF 저장 완료 (SaveAs): {pdf_path}')
+            pdf_ok = True
         except Exception as e1:
-            log_write(log_path, f'FileSaveAsPdf 실패: {e1}')
-            # 폴백: hwp.SaveAs 메서드
+            log_write(log_path, f'SaveAs PDF 실패: {e1}')
+
+        # 방법2: FileSaveAsPdf 전용 액션
+        if not pdf_ok:
             try:
-                hwp.SaveAs(pdf_path, 'PDF')
-                log_write(log_path, f'PDF 저장 완료 (SaveAs 폴백): {pdf_path}')
+                hwp.HAction.GetDefault('FileSaveAsPdf', hwp.HParameterSet.HFileSaveAsPdf.HSet)
+                pset = hwp.HParameterSet.HFileSaveAsPdf
+                pset.FileName = pdf_path
+                hwp.HAction.Execute('FileSaveAsPdf', pset.HSet)
+                log_write(log_path, f'PDF 저장 완료 (FileSaveAsPdf): {pdf_path}')
+                pdf_ok = True
             except Exception as e2:
-                log_write(log_path, f'SaveAs PDF 폴백 실패: {e2}')
-                log_write(log_path, 'PDF 변환 실패 - filled HWP 파일은 정상 저장됨')
+                log_write(log_path, f'FileSaveAsPdf 실패: {e2}')
+
+        if not pdf_ok:
+            log_write(log_path, 'PDF 변환 실패 - filled HWP 파일은 정상 저장됨')
 
         time.sleep(0.5)
         hwp.Quit()
