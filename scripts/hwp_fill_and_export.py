@@ -7,6 +7,8 @@ from datetime import datetime
 
 try:
     import win32com.client  # type: ignore
+    import win32com.client.dynamic  # type: ignore
+    import win32com  # type: ignore
 except ImportError:
     win32com = None
 
@@ -83,9 +85,17 @@ def main():
     shutil.copyfile(input_path, filled_path)
     log_write(log_path, f'템플릿 복사: {input_path} -> {filled_path}')
 
+    # gen_py 캐시 삭제 (이전 EnsureDispatch가 만든 strict binding 제거)
+    try:
+        gen_path = getattr(win32com, '__gen_path__', None)
+        if gen_path and os.path.isdir(gen_path):
+            shutil.rmtree(gen_path, ignore_errors=True)
+    except Exception:
+        pass
+
     hwp = None
     try:
-        hwp = win32com.client.Dispatch('HWPFrame.HwpObject')
+        hwp = win32com.client.dynamic.Dispatch('HWPFrame.HwpObject')
         hwp.RegisterModule('FilePathCheckDLL', 'SecurityModule')
         log_write(log_path, '한글 객체 생성 완료')
 
@@ -128,32 +138,23 @@ def main():
         hwp.HAction.Run('FileSave')
         log_write(log_path, f'채워진 파일 저장: {filled_path}')
 
-        # 5단계: PDF 변환 - SaveAs 메서드로 시도
+        # 5단계: PDF 변환 - FileSaveAsPdf 전용 액션 사용
         pdf_path = os.path.join(output_dir, 'result.pdf')
-        pdf_ok = False
-
-        # 방법1: hwp.SaveAs(path, format) 메서드
         try:
-            hwp.SaveAs(pdf_path, 'PDF')
-            log_write(log_path, f'PDF 저장 완료 (SaveAs 메서드): {pdf_path}')
-            pdf_ok = True
+            hwp.HAction.GetDefault('FileSaveAsPdf', hwp.HParameterSet.HFileSaveAsPdf.HSet)
+            pset = hwp.HParameterSet.HFileSaveAsPdf
+            pset.FileName = pdf_path
+            hwp.HAction.Execute('FileSaveAsPdf', pset.HSet)
+            log_write(log_path, f'PDF 저장 완료 (FileSaveAsPdf): {pdf_path}')
         except Exception as e1:
-            log_write(log_path, f'PDF SaveAs 메서드 실패: {e1}')
-
-        # 방법2: hwp.SaveAs(path) - 확장자로 자동 판별
-        if not pdf_ok:
+            log_write(log_path, f'FileSaveAsPdf 실패: {e1}')
+            # 폴백: hwp.SaveAs 메서드
             try:
-                hwp.SaveAs(pdf_path)
-                if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
-                    log_write(log_path, f'PDF 저장 완료 (SaveAs 확장자): {pdf_path}')
-                    pdf_ok = True
-                else:
-                    log_write(log_path, 'SaveAs 확장자 방식 - 파일 생성 안됨')
+                hwp.SaveAs(pdf_path, 'PDF')
+                log_write(log_path, f'PDF 저장 완료 (SaveAs 폴백): {pdf_path}')
             except Exception as e2:
-                log_write(log_path, f'PDF SaveAs 확장자 실패: {e2}')
-
-        if not pdf_ok:
-            log_write(log_path, 'PDF 변환 실패 - filled HWP 파일은 정상 저장됨')
+                log_write(log_path, f'SaveAs PDF 폴백 실패: {e2}')
+                log_write(log_path, 'PDF 변환 실패 - filled HWP 파일은 정상 저장됨')
 
         time.sleep(0.5)
         hwp.Quit()
