@@ -1,12 +1,12 @@
-# 톡캐디 (TalkCaddy) TWA - 프로덕션 빌드 & 배포 가이드
+# 톡캐디-카톡 답장 도우미 TWA - 프로덕션 빌드 & 배포 가이드
 
 ## 개요
 PWABuilder로 생성된 Trusted Web Activity(TWA) Android 앱입니다.
 `talkcaddy-nnm5gwq6.manus.space` 웹앱을 네이티브 Android 앱으로 래핑합니다.
 
 ## 현재 버전
-- **versionCode**: 3
-- **versionName**: 1.1.0
+- **versionCode**: 4
+- **versionName**: 1.1.2
 - **패키지명**: `space.manus.talkcaddy_nnm5gwq6.twa`
 - **compileSdk**: 36 / **targetSdk**: 35 / **minSdk**: 23
 
@@ -103,7 +103,8 @@ https://talkcaddy-nnm5gwq6.manus.space/.well-known/assetlinks.json
 ---
 
 ## v1.0.0.0 → v1.1.0 변경사항
-- versionCode: 1 → 3 (Play Store 비공개 테스트 versionCode 2보다 높음)
+- 앱 이름 변경: "톡캐디" → "톡캐디-카톡 답장 도우미"
+- versionCode: 1 → 4, versionName: 1.0.0.0 → 1.1.2
 - jcenter() → mavenCentral() 마이그레이션 (jcenter deprecated)
 - lintOptions → lint 블록으로 변경 (AGP 8.x 호환)
 - Java source/target: 1.8 → 17 (JDK 21 호환)

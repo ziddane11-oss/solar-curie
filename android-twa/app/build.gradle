@@ -24,7 +24,7 @@ def twaManifest = [
     applicationId: 'space.manus.talkcaddy_nnm5gwq6.twa',
     hostName: 'talkcaddy-nnm5gwq6.manus.space', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
-    name: '톡캐디', // The application name.
+    name: '톡캐디-카톡 답장 도우미', // The application name.
     launcherName: '톡캐디', // The name shown on the Android Launcher.
     themeColor: '#F97316', // The color used for the status bar.
     themeColorDark: '#F97316', // The color used for the dark status bar.
@@ -57,8 +57,8 @@ android {
         applicationId "space.manus.talkcaddy_nnm5gwq6.twa"
         minSdkVersion 23
         targetSdkVersion 35
-        versionCode 3
-        versionName "1.1.0"
+        versionCode 4
+        versionName "1.1.2"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
