@@ -31,3 +31,15 @@ yarn-error.log*
 # output (generated files)
 output/*/
 !output/.gitkeep
+
+# Android TWA - sensitive & build files
+*.keystore
+*.jks
+signing-key-info.txt
+*.apk
+*.aab
+*.idsig
+android-twa/app/build/
+android-twa/build/
+android-twa/.gradle/
+local.properties

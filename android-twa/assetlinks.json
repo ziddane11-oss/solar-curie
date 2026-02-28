@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "space.manus.talkcaddy_nnm5gwq6.twa",
+        "sha256_cert_fingerprints": ["3A:4A:FD:E9:77:0D:71:33:73:32:94:AD:B7:23:E9:70:F2:41:DD:8B:4E:A5:99:9A:A1:31:08:2C:48:F3:7B:CC"]
+      }
+    }]
