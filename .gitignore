@@ -43,3 +43,4 @@ android-twa/app/build/
 android-twa/build/
 android-twa/.gradle/
 local.properties
+keystore.properties
