@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import TabNav from '@/components/ui/TabNav';
 import ProfileBar from '@/components/ui/ProfileBar';
 import PrivacyNotice from '@/components/ui/PrivacyNotice';
-import TodayTaskDock from '@/components/ui/TodayTaskDock';
 import PersonalInfoForm from '@/components/forms/PersonalInfoForm';
 import EducationForm from '@/components/forms/EducationForm';
 import CareerForm from '@/components/forms/CareerForm';
@@ -267,7 +266,6 @@ export default function Home() {
 
   return (
     <div className={styles.page}>
-      <TodayTaskDock />
       <header className={styles.header}>
         <div>
           <h1>지원서작성기</h1>

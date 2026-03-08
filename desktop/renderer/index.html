@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Today Dock</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main id="app" class="dock">
+      <header>
+        <h1>오늘 일정</h1>
+        <p id="clock" class="time"></p>
+      </header>
+      <p id="message" class="message"></p>
+      <section>
+        <h2>현재 작업</h2>
+        <div id="current" class="list"></div>
+      </section>
+      <section>
+        <h2>다가오는 작업</h2>
+        <div id="upcoming" class="list"></div>
+      </section>
+      <section>
+        <h2>완료됨</h2>
+        <div id="completed" class="list"></div>
+      </section>
+    </main>
+    <script src="./renderer.js"></script>
+  </body>
+</html>
