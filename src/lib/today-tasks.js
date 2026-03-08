@@ -89,8 +89,9 @@ export function getUrgencyState(task, now = new Date()) {
   if (now >= task.startAt && now < task.endAt) return 'current';
 
   const minutesToStart = (task.startAt.getTime() - now.getTime()) / (1000 * 60);
-  if (minutesToStart <= 30) return 'urgent';
-  if (minutesToStart <= 90) return 'soon';
+  if (minutesToStart <= 1) return 'blink1';
+  if (minutesToStart <= 5) return 'red5';
+  if (minutesToStart <= 10) return 'yellow10';
   return 'normal';
 }
 

@@ -13,9 +13,10 @@ import styles from './TodayTaskDock.module.css';
 const URGENCY_LABEL = {
   overdue: '지연',
   current: '진행 중',
-  urgent: '임박',
-  soon: '예정',
-  normal: '여유',
+  blink1: '1분 이내',
+  red5: '5분 이내',
+  yellow10: '10분 이내',
+  normal: '일반',
 };
 
 export default function TodayTaskDock() {
@@ -24,10 +25,16 @@ export default function TodayTaskDock() {
   const [isLoading, setIsLoading] = useState(true);
   const [fallbackMessage, setFallbackMessage] = useState('');
   const [malformedCount, setMalformedCount] = useState(0);
+  const [blinkOn, setBlinkOn] = useState(true);
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 30 * 1000);
-    return () => clearInterval(timer);
+    const clockTimer = setInterval(() => setNow(new Date()), 1000);
+    const blinkTimer = setInterval(() => setBlinkOn((prev) => !prev), 700);
+
+    return () => {
+      clearInterval(clockTimer);
+      clearInterval(blinkTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -85,7 +92,7 @@ export default function TodayTaskDock() {
       <section className={styles.section}>
         <h3>현재 작업</h3>
         {currentTask ? (
-          <TaskCard task={currentTask} now={now} isCurrent />
+          <TaskCard task={currentTask} now={now} isCurrent blinkOn={blinkOn} />
         ) : (
           <div className={styles.empty}>진행 중인 작업이 없습니다.</div>
         )}
@@ -95,7 +102,7 @@ export default function TodayTaskDock() {
         <h3>다가오는 작업</h3>
         <div className={styles.list}>
           {upcomingTasks.length > 0 ? (
-            upcomingTasks.map((task) => <TaskCard key={task.id} task={task} now={now} />)
+            upcomingTasks.map((task) => <TaskCard key={task.id} task={task} now={now} blinkOn={blinkOn} />)
           ) : (
             <div className={styles.empty}>오늘 남은 작업이 없습니다.</div>
           )}
@@ -105,11 +112,12 @@ export default function TodayTaskDock() {
   );
 }
 
-function TaskCard({ task, now, isCurrent = false }) {
+function TaskCard({ task, now, blinkOn, isCurrent = false }) {
   const urgency = getUrgencyState(task, now);
+  const blinkClass = urgency === 'blink1' && blinkOn ? styles.blinkActive : '';
 
   return (
-    <article className={`${styles.card} ${styles[urgency]} ${isCurrent ? styles.currentCard : ''}`}>
+    <article className={`${styles.card} ${styles[urgency]} ${isCurrent ? styles.currentCard : ''} ${blinkClass}`}>
       <div className={styles.row}>
         <strong>{task.title}</strong>
         <span className={styles.badge}>{URGENCY_LABEL[urgency]}</span>
