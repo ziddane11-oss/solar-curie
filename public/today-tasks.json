@@ -1,0 +1,16 @@
+[
+  {
+    "id": "task-demo-1",
+    "title": "오늘 업무 예시 (date를 오늘 날짜로 바꿔 사용)",
+    "date": "2026-01-01",
+    "start": "09:00",
+    "durationMin": 60
+  },
+  {
+    "id": "task-demo-2",
+    "title": "다른 날짜 업무 예시",
+    "date": "2026-01-02",
+    "start": "13:30",
+    "durationMin": 45
+  }
+]
