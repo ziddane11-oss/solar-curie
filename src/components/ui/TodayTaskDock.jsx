@@ -8,6 +8,11 @@ import {
   formatTimeRange,
   loadTodayTasksFromJson,
 } from '@/lib/today-tasks';
+import {
+  getLocalDateKey,
+  loadCompletedTaskIds,
+  saveCompletedTaskIds,
+} from '@/lib/today-task-completion';
 import styles from './TodayTaskDock.module.css';
 
 const URGENCY_LABEL = {
@@ -26,6 +31,13 @@ export default function TodayTaskDock() {
   const [fallbackMessage, setFallbackMessage] = useState('');
   const [malformedCount, setMalformedCount] = useState(0);
   const [blinkOn, setBlinkOn] = useState(true);
+  const [completedIds, setCompletedIds] = useState([]);
+
+  const dateKey = useMemo(() => getLocalDateKey(now), [now]);
+
+  useEffect(() => {
+    setCompletedIds(loadCompletedTaskIds(dateKey));
+  }, [dateKey]);
 
   useEffect(() => {
     const clockTimer = setInterval(() => setNow(new Date()), 1000);
@@ -73,10 +85,27 @@ export default function TodayTaskDock() {
     };
   }, []);
 
+  const { activeTasks, completedTasks } = useMemo(() => {
+    const completedSet = new Set(completedIds);
+    return {
+      activeTasks: tasks.filter((task) => !completedSet.has(task.id)),
+      completedTasks: tasks.filter((task) => completedSet.has(task.id)),
+    };
+  }, [tasks, completedIds]);
+
   const { currentTask, upcomingTasks } = useMemo(() => ({
-    currentTask: getCurrentTask(tasks, now),
-    upcomingTasks: getUpcomingTasks(tasks, now),
-  }), [tasks, now]);
+    currentTask: getCurrentTask(activeTasks, now),
+    upcomingTasks: getUpcomingTasks(activeTasks, now),
+  }), [activeTasks, now]);
+
+  const toggleComplete = (taskId) => {
+    setCompletedIds((prev) => {
+      const exists = prev.includes(taskId);
+      const next = exists ? prev.filter((id) => id !== taskId) : [...prev, taskId];
+      saveCompletedTaskIds(dateKey, next);
+      return next;
+    });
+  };
 
   return (
     <aside className={styles.dock} aria-label="오늘 일정 도크">
@@ -92,7 +121,7 @@ export default function TodayTaskDock() {
       <section className={styles.section}>
         <h3>현재 작업</h3>
         {currentTask ? (
-          <TaskCard task={currentTask} now={now} isCurrent blinkOn={blinkOn} />
+          <TaskCard task={currentTask} now={now} isCurrent blinkOn={blinkOn} onToggleComplete={toggleComplete} />
         ) : (
           <div className={styles.empty}>진행 중인 작업이 없습니다.</div>
         )}
@@ -102,9 +131,31 @@ export default function TodayTaskDock() {
         <h3>다가오는 작업</h3>
         <div className={styles.list}>
           {upcomingTasks.length > 0 ? (
-            upcomingTasks.map((task) => <TaskCard key={task.id} task={task} now={now} blinkOn={blinkOn} />)
+            upcomingTasks.map((task) => (
+              <TaskCard key={task.id} task={task} now={now} blinkOn={blinkOn} onToggleComplete={toggleComplete} />
+            ))
           ) : (
             <div className={styles.empty}>오늘 남은 작업이 없습니다.</div>
+          )}
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <h3>완료됨</h3>
+        <div className={styles.list}>
+          {completedTasks.length > 0 ? (
+            completedTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                now={now}
+                blinkOn={false}
+                isCompleted
+                onToggleComplete={toggleComplete}
+              />
+            ))
+          ) : (
+            <div className={styles.empty}>완료한 작업이 없습니다.</div>
           )}
         </div>
       </section>
@@ -112,17 +163,22 @@ export default function TodayTaskDock() {
   );
 }
 
-function TaskCard({ task, now, blinkOn, isCurrent = false }) {
+function TaskCard({ task, now, blinkOn, isCurrent = false, isCompleted = false, onToggleComplete }) {
   const urgency = getUrgencyState(task, now);
   const blinkClass = urgency === 'blink1' && blinkOn ? styles.blinkActive : '';
+  const completedClass = isCompleted ? styles.completed : '';
 
   return (
-    <article className={`${styles.card} ${styles[urgency]} ${isCurrent ? styles.currentCard : ''} ${blinkClass}`}>
+    <article className={`${styles.card} ${styles[urgency]} ${isCurrent ? styles.currentCard : ''} ${blinkClass} ${completedClass}`}>
       <div className={styles.row}>
         <strong>{task.title}</strong>
-        <span className={styles.badge}>{URGENCY_LABEL[urgency]}</span>
+        {!isCompleted && <span className={styles.badge}>{URGENCY_LABEL[urgency]}</span>}
       </div>
       <p className={styles.range}>{formatTimeRange(task)}</p>
+      <label className={styles.completeControl}>
+        <input type="checkbox" checked={isCompleted} onChange={() => onToggleComplete(task.id)} />
+        <span>{isCompleted ? '완료 취소' : '완료 처리'}</span>
+      </label>
     </article>
   );
 }
